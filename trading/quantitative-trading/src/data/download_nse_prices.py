@@ -28,7 +28,7 @@ def get_trading_dates(start,end):
 
 def construct_url(date):
     if date<datetime.date(2024,1,1):
-        filename=f"cm{date:%d}{date:%b}".upper()+f"{date:%Y}bhav.csv.zip"
+        filename=f"cm{date:%d}{date:%b}"+f"{date:%Y}bhav.csv.zip"
         return f"https://archives.nseindia.com/content/historical/EQUITIES/{date:%Y}/CM/{filename}","legacy",filename
     filename=f"BhavCopy_NSE_CM_0_0_0_{date:%Y%m%d}_F_0000.csv.zip"
     return f"https://nsearchives.nseindia.com/content/cm/{filename}","udiff",filename
