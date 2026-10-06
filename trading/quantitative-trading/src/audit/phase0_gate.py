@@ -31,6 +31,22 @@ def check_membership():
     ar=read(audit)
     if not ar or any(r.get("status")!="PASS" for r in ar):return False,"PIT reconstruction audit has not passed"
     return True,f"{len(rows)} transition rows + passing reconstruction audit"
+def check_identity_events():
+    p=REFERENCE/"security_identity_events.csv"
+    if not p.exists():return False,"security identity event ledger missing"
+    rows=read(p)
+    required={"event_date","symbol","event_type","old_isin","new_isin","source","source_reference"}
+    if not rows or not required<=set(rows[0]):return False,"identity-event schema incomplete"
+    keys={(r["symbol"],r["event_type"],r["old_isin"],r["new_isin"]) for r in rows}
+    required_events={
+        ("YESBANK","SUBDIVISION","INE528G01019","INE528G01027"),
+        ("YESBANK","RECONSTRUCTION","INE528G01027","INE528G01035"),
+        ("HDFC","AMALGAMATION","INE001A01036","INE040A01034"),
+    }
+    if not required_events<=keys:return False,"required historical identity events missing"
+    if any(r.get("source")!="OFFICIAL" for r in rows):return False,"identity event has non-official source"
+    return True,f"{len(rows)} canonical identity events"
+
 def check_manifest():
     p=RAW/"download_manifest.csv"
     if not p.exists():return False,"raw price manifest missing"
@@ -58,7 +74,7 @@ def check_hashes():
     return True,f"{len(rows)} local files hash-verified"
 def main():
     print("="*64+"\nPHASE 0 DATA GATE\n"+"="*64)
-    checks=[("Trading calendar",check_calendar),("PIT membership",check_membership),("Raw manifest",check_manifest),("Raw file hashes",check_hashes)]
+    checks=[("Trading calendar",check_calendar),("PIT membership",check_membership),("Security identity",check_identity_events),("Raw manifest",check_manifest),("Raw file hashes",check_hashes)]
     failures=[]
     for name,fn in checks:
         try:ok,msg=fn()
