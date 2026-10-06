@@ -23,47 +23,16 @@ def file_date(path):
     except (ValueError,IndexError):pass
     return None
 
-def baseline_isins(symbols):
-    candidates=[]
-    for path in list(RAW.rglob("*.csv"))+list(RAW.rglob("*.zip")):
-        d=file_date(path)
-        if d and d<=BASELINE_DATE:candidates.append((d,path))
-    if not candidates:return {}
-    _,path=max(candidates,key=lambda x:x[0])
-    found={}
-    def consume(stream):
-        rows=csv.DictReader(stream.read().decode("utf-8-sig").splitlines()); cols=set(rows.fieldnames or [])
-        if {"SYMBOL","SERIES","ISIN"}<=cols: sk,ser="SYMBOL","SERIES"
-        elif {"TckrSymb","SctySrs","ISIN"}<=cols: sk,ser="TckrSymb","SctySrs"
-        else:return
-        for r in rows:
-            s=(r.get(sk) or "").strip()
-            if s in symbols and (r.get(ser) or "").strip()=="EQ" and r.get("ISIN"):found[s]=r["ISIN"].strip()
-    if path.suffix.lower()==".zip":
-        with zipfile.ZipFile(path) as z:
-            names=[n for n in z.namelist() if n.lower().endswith(".csv")]
-            if len(names)!=1:raise RuntimeError(f"expected one CSV in {path}")
-            with z.open(names[0]) as f:consume(f)
-    else:
-        with path.open("rb") as f:consume(f)
-    return found
-
 def load_baseline():
     rows=read_csv(BASELINE)
-    if len(rows)!=51:raise RuntimeError(f"2017-03-31 baseline expected 51 rows; found {len(rows)}")
+    if len(rows)!=51: raise RuntimeError(f"2017-03-31 baseline expected 51 rows; found {len(rows)}")
     out={}
     for r in rows:
-        s=r["symbol"].strip()
-        if not s or s in out:raise RuntimeError(f"invalid/duplicate baseline symbol: {s}")
-        out[s]=Security(s,r["company_name"].strip(),r.get("isin","").strip())
-    missing={s for s,v in out.items() if not v.isin}
-    if missing:
-        resolved=baseline_isins(missing)
-        out={s:Security(v.symbol,v.company_name,v.isin or resolved.get(s,"")) for s,v in out.items()}
-    unresolved=[s for s,v in out.items() if not v.isin]
-    if unresolved:raise RuntimeError("baseline ISINs unresolved from pre/post-baseline raw exchange file: "+", ".join(sorted(unresolved)))
+        s=r["symbol"].strip(); isin=r.get("isin","").strip()
+        if not s or s in out: raise RuntimeError(f"invalid/duplicate baseline symbol: {s}")
+        if not isin: raise RuntimeError(f"baseline ISIN missing for {s}")
+        out[s]=Security(s,r["company_name"].strip(),isin)
     return out
-
 def load_transitions():
     rows=read_csv(TRANSITIONS); required={"effective_date","symbol","company_name","isin","action"}
     if not rows or not required<=set(rows[0]):raise RuntimeError("membership ledger missing/invalid schema")
