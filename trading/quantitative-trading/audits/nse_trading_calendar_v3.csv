@@ -847,7 +847,7 @@ date,year,weekday,is_trading_day,source,source_reference,validation_status,sessi
 2019-04-26,2019,Friday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2019),VALIDATED,REGULAR
 2019-04-27,2019,Saturday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
 2019-04-28,2019,Sunday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
-2019-04-29,2019,Monday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2019),VALIDATED,REGULAR
+2019-04-29,2019,Monday,False,NSE_OFFICIAL,NSE official election-holiday circular,VALIDATED,REGULAR
 2019-04-30,2019,Tuesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2019),VALIDATED,REGULAR
 2019-05-01,2019,Wednesday,False,NSE_OFFICIAL,NSE/CMTR/39612,VALIDATED,REGULAR
 2019-05-02,2019,Thursday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2019),VALIDATED,REGULAR
@@ -1022,7 +1022,7 @@ date,year,weekday,is_trading_day,source,source_reference,validation_status,sessi
 2019-10-18,2019,Friday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2019),VALIDATED,REGULAR
 2019-10-19,2019,Saturday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
 2019-10-20,2019,Sunday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
-2019-10-21,2019,Monday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2019),VALIDATED,REGULAR
+2019-10-21,2019,Monday,False,NSE_OFFICIAL,NSE official election-holiday circular,VALIDATED,REGULAR
 2019-10-22,2019,Tuesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2019),VALIDATED,REGULAR
 2019-10-23,2019,Wednesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2019),VALIDATED,REGULAR
 2019-10-24,2019,Thursday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2019),VALIDATED,REGULAR
@@ -2368,8 +2368,8 @@ date,year,weekday,is_trading_day,source,source_reference,validation_status,sessi
 2023-06-25,2023,Sunday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
 2023-06-26,2023,Monday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2023),VALIDATED,REGULAR
 2023-06-27,2023,Tuesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2023),VALIDATED,REGULAR
-2023-06-28,2023,Wednesday,False,NSE_OFFICIAL,NSE/CMTR/54757,VALIDATED,REGULAR
-2023-06-29,2023,Thursday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2023),VALIDATED,REGULAR
+2023-06-28,2023,Wednesday,True,NSE_OFFICIAL,NSE/CMTR/57285,VALIDATED,REGULAR
+2023-06-29,2023,Thursday,False,NSE_OFFICIAL,NSE/CMTR/57285,VALIDATED,REGULAR
 2023-06-30,2023,Friday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2023),VALIDATED,REGULAR
 2023-07-01,2023,Saturday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
 2023-07-02,2023,Sunday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
@@ -2576,7 +2576,7 @@ date,year,weekday,is_trading_day,source,source_reference,validation_status,sessi
 2024-01-19,2024,Friday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-01-20,2024,Saturday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
 2024-01-21,2024,Sunday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
-2024-01-22,2024,Monday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
+2024-01-22,2024,Monday,False,NSE_OFFICIAL,NSE/CMTR/60338,VALIDATED,REGULAR
 2024-01-23,2024,Tuesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-01-24,2024,Wednesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-01-25,2024,Thursday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
@@ -2695,7 +2695,7 @@ date,year,weekday,is_trading_day,source,source_reference,validation_status,sessi
 2024-05-17,2024,Friday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-05-18,2024,Saturday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
 2024-05-19,2024,Sunday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
-2024-05-20,2024,Monday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
+2024-05-20,2024,Monday,False,NSE_OFFICIAL,NSE/FAOP/61517,VALIDATED,REGULAR
 2024-05-21,2024,Tuesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-05-22,2024,Wednesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-05-23,2024,Thursday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
@@ -2879,7 +2879,7 @@ date,year,weekday,is_trading_day,source,source_reference,validation_status,sessi
 2024-11-17,2024,Sunday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
 2024-11-18,2024,Monday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-11-19,2024,Tuesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
-2024-11-20,2024,Wednesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
+2024-11-20,2024,Wednesday,False,NSE_OFFICIAL,NSE/CMTR/64960,VALIDATED,REGULAR
 2024-11-21,2024,Thursday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-11-22,2024,Friday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-11-23,2024,Saturday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
