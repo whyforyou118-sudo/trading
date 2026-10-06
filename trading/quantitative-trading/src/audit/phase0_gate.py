@@ -43,7 +43,9 @@ def check_membership():
     if len(keys) != len(set(keys)): return False, "duplicate membership transition rows"
     if any(not r.get("symbol") or not r.get("isin") or not r.get("company_name") for r in rows):
         return False, "membership row has incomplete identity"
-    return True, f"{len(rows)} membership transition rows present"
+    baseline = REFERENCE / "nifty50_baseline.csv"
+    if not baseline.exists(): return False, "authoritative NIFTY 50 baseline snapshot missing"
+    return True, f"{len(rows)} transition rows + baseline present"
 
 def check_raw_manifest():
     manifest = RAW / "prices" / "download_manifest.csv"
@@ -81,13 +83,14 @@ def main():
     print("=" * 64)
     print("PHASE 0 DATA GATE")
     print("=" * 64)
-    failures = []
-    for name, check in [
+    checks = [
         ("Trading calendar", check_calendar),
         ("PIT membership", check_membership),
         ("Raw manifest", check_raw_manifest),
         ("Raw file hashes", check_local_hashes),
-    ]:
+    ]
+    failures = []
+    for name, check in checks:
         try:
             ok, detail = check()
         except Exception as exc:
@@ -99,7 +102,8 @@ def main():
         print("PHASE 0: FAIL")
         for failure in failures: print(f"- {failure}")
         return 1
-    print("PHASE 0: PARTIAL — identity, corporate-action, PIT-price, and source-reconciliation checks remain.")
+    print("PHASE 0: PARTIAL — run validate_pit_membership.py and complete identity,")
+    print("corporate-action, PIT-price, and source-reconciliation checks.")
     return 2
 
 if __name__ == "__main__":
