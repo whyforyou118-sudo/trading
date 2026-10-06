@@ -1,171 +1,117 @@
-import csv, os, datetime
+import csv
+import datetime
+import io
+import zipfile
 from pathlib import Path
 
-def parse_price_file(filepath: Path):
-    """Parse a bhavcopy CSV (legacy or UDiFF) and return a dict of metrics.
-    Returns a dict with keys matching the full_price_coverage columns.
-    """
-    result = {
-        'filename': str(filepath),
-        'trading_date': '',
-        'row_count': 0,
-        'unique_symbols': [],
-        'duplicate_rows': 0,
-        'missing_ohlc': 0,
-        'invalid_ohlc': 0,
-        'negative_price': 0,
-        'volume_anomalies': 0,
-        'missing_isin': 0,
-        'duplicate_symbol_isin': 0,
-        'date_consistency': 'OK',
-        'schema_consistency': 'unknown',
-        'error': ''
-    }
+def infer_date(filename: str) -> str:
+    name = Path(filename).name
     try:
-        with filepath.open('r', newline='', encoding='utf-8-sig') as f:
-            reader = csv.DictReader(f)
-            cols = set(reader.fieldnames or [])
-            # Detect schema
-            if {'SYMBOL','SERIES','OPEN','HIGH','LOW','CLOSE','TOTTRDQTY','TOTTRDVAL','ISIN'}.issubset(cols):
-                result['schema_consistency'] = 'legacy'
-                sym_key, series_key = 'SYMBOL', 'SERIES'
-                open_key, high_key, low_key, close_key = 'OPEN','HIGH','LOW','CLOSE'
-                vol_key, isin_key = 'TOTTRDQTY','ISIN'
-            elif {'TckrSymb','SctySrs','OpnPric','HghPric','LwPric','ClsPric','TtlTradgVol','TtlTrfVal','ISIN'}.issubset(cols):
-                result['schema_consistency'] = 'udiff'
-                sym_key, series_key = 'TckrSymb', 'SctySrs'
-                open_key, high_key, low_key, close_key = 'OpnPric','HghPric','LwPric','ClsPric'
-                vol_key, isin_key = 'TtlTradgVol','ISIN'
-            else:
-                result['schema_consistency'] = 'unknown'
-                # fallback generic keys
-                sym_key = next((k for k in ['SYMBOL','TckrSymb'] if k in cols), None)
-                series_key = next((k for k in ['SERIES','SctySrs'] if k in cols), None)
-                open_key = next((k for k in ['OPEN','OpnPric'] if k in cols), None)
-                high_key = next((k for k in ['HIGH','HghPric'] if k in cols), None)
-                low_key = next((k for k in ['LOW','LwPric'] if k in cols), None)
-                close_key = next((k for k in ['CLOSE','ClsPric'] if k in cols), None)
-                vol_key = next((k for k in ['TOTTRDQTY','TtlTradgVol'] if k in cols), None)
-                isin_key = 'ISIN' if 'ISIN' in cols else None
+        if name.startswith("cm") and "bhav.csv" in name:
+            return datetime.datetime.strptime(name[2:11], "%d%b%Y").date().isoformat()
+        if name.startswith("BhavCopy_NSE_CM_"):
+            return datetime.datetime.strptime(name.split("_")[5], "%Y%m%d").date().isoformat()
+    except (ValueError, IndexError):
+        return ""
+    return ""
 
-            seen_rows = set()
-            seen_symbol_isin = set()
-            symbols = set()
-            for row in reader:
-                result['row_count'] += 1
-                # trading date from filename if not already set
-                if not result['trading_date']:
-                    # Try to infer date from filename patterns
-                    name = filepath.name
-                    # legacy: cmDDMMMYYYYbhav.csv.zip -> extract DDMMMYYYY
-                    # udiff: BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip
-                    try:
-                        if result['schema_consistency'] == 'legacy':
-                            dt_str = name[2:9]  # e.g., 01JAN17 -> need to parse
-                            dt = datetime.datetime.strptime(dt_str, '%d%b%Y').date()
-                        else:
-                            dt_str = name.split('_')[-3]  # YYYYMMDD
-                            dt = datetime.datetime.strptime(dt_str, '%Y%m%d').date()
-                        result['trading_date'] = dt.isoformat()
-                    except Exception:
-                        pass
-                # symbol & series
-                sym = row.get(sym_key, '').strip() if sym_key else ''
-                ser = row.get(series_key, '').strip() if series_key else ''
-                symbols.add(sym)
-                # duplicate rows detection (symbol+series)
-                key = (sym, ser)
-                if key in seen_rows:
-                    result['duplicate_rows'] += 1
-                else:
-                    seen_rows.add(key)
-                # OHLC checks
-                try:
-                    o = float(row.get(open_key, 0) or 0)
-                    h = float(row.get(high_key, 0) or 0)
-                    l = float(row.get(low_key, 0) or 0)
-                    c = float(row.get(close_key, 0) or 0)
-                except Exception:
-                    result['missing_ohlc'] += 1
-                    continue
-                if not (l <= o <= h and l <= c <= h):
-                    result['invalid_ohlc'] += 1
-                if o <= 0 or h <= 0 or l <= 0 or c <= 0:
-                    result['negative_price'] += 1
-                # volume
-                try:
-                    vol = float(row.get(vol_key, 0) or 0)
-                    if vol > 5e8:
-                        result['volume_anomalies'] += 1
-                except Exception:
-                    pass
-                # ISIN
-                if isin_key:
-                    isin = row.get(isin_key, '').strip()
-                    if not isin:
-                        result['missing_isin'] += 1
-                    else:
-                        sym_isin = (sym, isin)
-                        if sym_isin in seen_symbol_isin:
-                            result['duplicate_symbol_isin'] += 1
-                        else:
-                            seen_symbol_isin.add(sym_isin)
-            result['unique_symbols'] = list(sorted(symbols))
-    except Exception as e:
-        result['error'] = str(e)
+def parse_csv_stream(stream, display_name: str):
+    result = {"filename": display_name, "trading_date": infer_date(display_name),
+              "row_count": 0, "unique_symbols": set(), "duplicate_rows": 0,
+              "missing_ohlc": 0, "invalid_ohlc": 0, "negative_price": 0,
+              "volume_anomalies": 0, "missing_isin": 0, "duplicate_symbol_isin": 0,
+              "schema_consistency": "unknown", "error": ""}
+    try:
+        text = stream.read().decode("utf-8-sig")
+        reader = csv.DictReader(io.StringIO(text))
+        cols = set(reader.fieldnames or [])
+        if {"SYMBOL","SERIES","OPEN","HIGH","LOW","CLOSE","TOTTRDQTY","ISIN"}.issubset(cols):
+            result["schema_consistency"] = "legacy"
+            sym_key, series_key = "SYMBOL", "SERIES"
+            open_key, high_key, low_key, close_key = "OPEN","HIGH","LOW","CLOSE"
+            vol_key, isin_key = "TOTTRDQTY","ISIN"
+        elif {"TckrSymb","SctySrs","OpnPric","HghPric","LwPric","ClsPric","TtlTradgVol","ISIN"}.issubset(cols):
+            result["schema_consistency"] = "udiff"
+            sym_key, series_key = "TckrSymb", "SctySrs"
+            open_key, high_key, low_key, close_key = "OpnPric","HghPric","LwPric","ClsPric"
+            vol_key, isin_key = "TtlTradgVol","ISIN"
+        else:
+            result["error"] = "unknown schema"
+            return result
+        seen_rows, seen_symbol_isin = set(), set()
+        for row in reader:
+            result["row_count"] += 1
+            sym, ser = (row.get(sym_key) or "").strip(), (row.get(series_key) or "").strip()
+            result["unique_symbols"].add(sym)
+            key = (sym, ser)
+            if key in seen_rows: result["duplicate_rows"] += 1
+            seen_rows.add(key)
+            try:
+                o,h,l,c = [float(row.get(k) or 0) for k in (open_key,high_key,low_key,close_key)]
+            except (TypeError, ValueError):
+                result["missing_ohlc"] += 1
+                continue
+            if not (l <= o <= h and l <= c <= h): result["invalid_ohlc"] += 1
+            if min(o,h,l,c) <= 0: result["negative_price"] += 1
+            try:
+                if float(row.get(vol_key) or 0) > 5e8: result["volume_anomalies"] += 1
+            except (TypeError, ValueError):
+                result["volume_anomalies"] += 1
+            isin = (row.get(isin_key) or "").strip()
+            if not isin: result["missing_isin"] += 1
+            else:
+                pair = (sym, isin)
+                if pair in seen_symbol_isin: result["duplicate_symbol_isin"] += 1
+                seen_symbol_isin.add(pair)
+    except Exception as exc:
+        result["error"] = str(exc)
     return result
 
-def main():
-    root = Path('data/raw/prices')
-    out_csv = Path('audits/full_price_coverage.csv')
-    out_md = Path('audits/full_price_coverage.md')
-    fieldnames = ['filename','trading_date','row_count','unique_symbols','duplicate_rows','missing_ohlc','invalid_ohlc','negative_price','volume_anomalies','missing_isin','duplicate_symbol_isin','date_consistency','schema_consistency','error']
-    rows = []
-    for path in root.rglob('*.csv'):
-        rows.append(parse_price_file(path))
-    # write CSV
-    out_csv.parent.mkdir(parents=True, exist_ok=True)
-    with out_csv.open('w', newline='', encoding='utf-8') as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
-        for r in rows:
-            # json-serialize list of symbols for CSV readability
-            r_copy = r.copy()
-            r_copy['unique_symbols'] = ';'.join(r_copy['unique_symbols'])
-            writer.writerow(r_copy)
-    # write markdown summary
-    total_files = len(rows)
-    total_rows = sum(r['row_count'] for r in rows)
-    dates = [r['trading_date'] for r in rows if r['trading_date']]
-    earliest = min(dates) if dates else ''
-    latest = max(dates) if dates else ''
-    uniq_symbols = set()
-    for r in rows:
-        uniq_symbols.update(r['unique_symbols'])
-    failed = sum(1 for r in rows if r['error'])
-    suspicious = sum(1 for r in rows if any([
-        r['duplicate_rows'], r['missing_ohlc'], r['invalid_ohlc'], r['negative_price'], r['volume_anomalies'], r['missing_isin'], r['duplicate_symbol_isin']]))
-    with out_md.open('w', encoding='utf-8') as f:
-        f.write('# Full Price Coverage Audit (recursive)\n\n')
-        f.write(f'**Total files:** {total_files}\n')
-        f.write(f'**Total rows:** {total_rows}\n')
-        f.write(f'**Date range:** {earliest} – {latest}\n')
-        f.write(f'**Unique securities (across all files):** {len(uniq_symbols)}\n')
-        f.write(f'**Failed files:** {failed}\n')
-        f.write(f'**Suspicious files:** {suspicious}\n')
-        f.write('\n')
-        f.write('Sample of processed rows (first 5):\n')
-        f.write('```csv\n')
-        import io
-        sio = io.StringIO()
-        w = csv.DictWriter(sio, fieldnames=fieldnames)
-        w.writeheader()
-        for r in rows[:5]:
-            rcopy = r.copy()
-            rcopy['unique_symbols'] = ';'.join(rcopy['unique_symbols'])
-            w.writerow(rcopy)
-        f.write(sio.getvalue())
-        f.write('```\n')
+def parse_price_file(filepath: Path):
+    if filepath.suffix.lower() == ".zip":
+        try:
+            with zipfile.ZipFile(filepath, "r") as zf:
+                members = [n for n in zf.namelist() if n.lower().endswith(".csv")]
+                if len(members) != 1:
+                    return {"filename": str(filepath), "trading_date": infer_date(filepath.name),
+                            "row_count": 0, "unique_symbols": set(), "duplicate_rows": 0,
+                            "missing_ohlc": 0, "invalid_ohlc": 0, "negative_price": 0,
+                            "volume_anomalies": 0, "missing_isin": 0, "duplicate_symbol_isin": 0,
+                            "schema_consistency": "unknown", "error": "expected exactly one CSV in ZIP"}
+                with zf.open(members[0], "r") as stream:
+                    return parse_csv_stream(stream, str(filepath))
+        except zipfile.BadZipFile as exc:
+            return {"filename": str(filepath), "trading_date": infer_date(filepath.name),
+                    "row_count": 0, "unique_symbols": set(), "duplicate_rows": 0,
+                    "missing_ohlc": 0, "invalid_ohlc": 0, "negative_price": 0,
+                    "volume_anomalies": 0, "missing_isin": 0, "duplicate_symbol_isin": 0,
+                    "schema_consistency": "unknown", "error": f"invalid ZIP: {exc}"}
+    with filepath.open("rb") as stream:
+        return parse_csv_stream(stream, str(filepath))
 
-if __name__ == '__main__':
+def main():
+    root = Path("data/raw/prices")
+    out_csv, out_md = Path("audits/full_price_coverage.csv"), Path("audits/full_price_coverage.md")
+    fields = ["filename","trading_date","row_count","unique_symbols","duplicate_rows","missing_ohlc",
+              "invalid_ohlc","negative_price","volume_anomalies","missing_isin","duplicate_symbol_isin",
+              "schema_consistency","error"]
+    paths = sorted(list(root.rglob("*.zip")) + list(root.rglob("*.csv")))
+    rows = [parse_price_file(p) for p in paths]
+    out_csv.parent.mkdir(parents=True, exist_ok=True)
+    with out_csv.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fields); w.writeheader()
+        for r in rows:
+            x = dict(r); x["unique_symbols"] = ";".join(sorted(r["unique_symbols"])); w.writerow(x)
+    dates = [r["trading_date"] for r in rows if r["trading_date"]]
+    symbols = set().union(*(r["unique_symbols"] for r in rows)) if rows else set()
+    failed = sum(bool(r["error"]) for r in rows)
+    suspicious = sum(any(r[k] for k in ["duplicate_rows","missing_ohlc","invalid_ohlc","negative_price",
+                                          "volume_anomalies","missing_isin","duplicate_symbol_isin"]) for r in rows)
+    with out_md.open("w", encoding="utf-8") as f:
+        f.write("# Full Price Coverage Audit\n\n")
+        f.write(f"**Files checked:** {len(rows)}\n**Total rows:** {sum(r['row_count'] for r in rows)}\n")
+        f.write(f"**Date range:** {min(dates) if dates else ''} – {max(dates) if dates else ''}\n")
+        f.write(f"**Unique symbols:** {len(symbols)}\n**Failed files:** {failed}\n**Suspicious files:** {suspicious}\n")
+
+if __name__ == "__main__":
     main()
