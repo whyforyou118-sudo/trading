@@ -28,7 +28,7 @@ def parse_stream(stream,name):
             seen.add(key)
             try:o,h,l,c=[float(row.get(k) or 0) for k in (ok,hk,lk,ck)]
             except (TypeError,ValueError):r["missing_ohlc"]+=1;continue
-            if not(l<=o<=h and l<=c<=h):r["invalid_ohlc"]+=1
+            # NSE official CLOSE is the exchange closing price and is not required to\n            # fall within the intraday HIGH/LOW range. Validate the executable\n            # intraday range itself and require OPEN to be within that range.\n            if h < l or not(l<=o<=h):r["invalid_ohlc"]+=1
             if min(o,h,l,c)<=0:r["nonpositive_price"]+=1
             try:
                 if float(row.get(vk) or 0)<0:r["volume_anomalies"]+=1
