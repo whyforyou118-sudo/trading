@@ -20,10 +20,10 @@ def main():
     rows=[]; d=START
     while d<=END:
         r=overrides.get(d)
-        if d.weekday()>=5:
-            trade=False; session="WEEKEND"; source="NSE_OFFICIAL"; ref="NSE exchange calendar"
-        elif r:
+        if r:
             trade=r["is_trading_day"].lower()=="true"; session=r["session_type"]; source=r["source"]; ref=r["source_reference"]
+        elif d.weekday()>=5:
+            trade=False; session="WEEKEND"; source="NSE_OFFICIAL"; ref="NSE exchange calendar"
         else:
             trade=True; session="REGULAR"; source="NSE_OFFICIAL"; ref=f"Annual NSE CM holiday circular ({d.year})"
         rows.append({"date":d.isoformat(),"year":d.year,"weekday":d.strftime("%A"),"is_trading_day":str(trade),"source":source,"source_reference":ref,"validation_status":"VALIDATED","session_type":session})
