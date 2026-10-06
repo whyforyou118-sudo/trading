@@ -49,7 +49,7 @@ def parse_file(path):
 
 def main():
     paths=sorted(list(RAW.rglob("*.zip"))+list(RAW.rglob("*.csv")))
-    paths=[p for p in paths if "sample" not in p.parts]
+    paths=[p for p in paths if "sample" not in p.parts and p.name.lower() != "download_manifest.csv"]
     if not paths:
         print("PRICE COVERAGE: BLOCKED — no full raw archive files found");return 2
     rows=[parse_file(p) for p in paths]; OUT.mkdir(parents=True,exist_ok=True)
