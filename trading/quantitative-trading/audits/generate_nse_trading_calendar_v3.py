@@ -1,40 +1,35 @@
-import pandas as pd, pandas_market_calendars as mcal, csv
+"""Generate the research calendar from the NSE official session/holiday reference."""
+from __future__ import annotations
+import csv,datetime
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+REF=ROOT/"data"/"reference"/"nse_official_sessions.csv"; OUT=ROOT/"audits"/"nse_trading_calendar_v3.csv"
+START=datetime.date(2017,1,1); END=datetime.date(2025,12,31)
 
-# Define date range
-start = '2017-01-01'
-end = '2025-12-31'
-
-# Obtain NSE schedule using pandas_market_calendars (as base)
-cal = mcal.get_calendar('NSE')
-schedule = cal.schedule(start_date=start, end_date=end)
-schedule = schedule.tz_localize(None)
-
-# Official holiday dates gathered from NSE circulars (2023, 2024) and user note for 2025-08-15
-official_holidays = {
-    # 2023 holidays
-    '2023-01-26','2023-03-08','2023-03-30','2023-04-04','2023-04-07','2023-04-14','2023-05-01','2023-06-28','2023-08-15','2023-09-19','2023-10-02','2023-10-24','2023-11-14','2023-11-27','2023-12-25',
-    # 2024 holidays
-    '2024-01-26','2024-03-08','2024-03-25','2024-03-29','2024-04-11','2024-04-17','2024-05-01','2024-06-17','2024-07-17','2024-08-15','2024-10-02','2024-11-01','2024-11-15','2024-12-25',
-    # User-specified 2025 holiday
-    '2025-08-15'
-}
-
-# Output CSV path
-out_path = r"C:/Users/damar/Downloads/trading/quantitative-trading/audits/nse_trading_calendar_v3.csv"
-with open(out_path, 'w', newline='') as f:
-    writer = csv.writer(f)
-    writer.writerow(['date','year','weekday','is_trading_day','source','source_reference','validation_status'])
-    for idx, row in schedule.iterrows():
-        d = idx.date()
-        date_str = d.isoformat()
-        is_trade = date_str not in official_holidays
-        writer.writerow([
-            date_str,
-            d.year,
-            d.strftime('%A'),
-            is_trade,
-            'pandas_market_calendars+official_holidays',
-            '2023/2024 circulars + user note',
-            'adjusted'
-        ])
-print('Calendar generated with', len(schedule), 'rows')
+def main():
+    if not REF.exists(): raise SystemExit(f"BLOCKED: missing {REF}")
+    overrides={}
+    with REF.open("r",encoding="utf-8-sig",newline="") as f:
+        for r in csv.DictReader(f):
+            d=datetime.date.fromisoformat(r["date"])
+            if START<=d<=END:
+                if r.get("source")!="NSE_OFFICIAL": raise SystemExit(f"BLOCKED: non-official source {d}")
+                overrides[d]=r
+    required_years=set(range(2017,2026))
+    if {d.year for d in overrides}!=required_years: raise SystemExit("BLOCKED: reference does not cover every research year")
+    rows=[]; d=START
+    while d<=END:
+        r=overrides.get(d)
+        if r:
+            trade=r["is_trading_day"].lower()=="true"; session=r["session_type"]; source=r["source"]; ref=r["source_reference"]
+        elif d.weekday()>=5:
+            trade=False; session="WEEKEND"; source="NSE_OFFICIAL"; ref="NSE exchange calendar"
+        else:
+            trade=True; session="REGULAR"; source="NSE_OFFICIAL"; ref=f"Annual NSE CM holiday circular ({d.year})"
+        rows.append({"date":d.isoformat(),"year":d.year,"weekday":d.strftime("%A"),"is_trading_day":str(trade),"source":source,"source_reference":ref,"validation_status":"VALIDATED","session_type":session})
+        d+=datetime.timedelta(days=1)
+    OUT.parent.mkdir(parents=True,exist_ok=True)
+    with OUT.open("w",newline="",encoding="utf-8") as f:
+        w=csv.DictWriter(f,fieldnames=["date","year","weekday","is_trading_day","source","source_reference","validation_status","session_type"]); w.writeheader(); w.writerows(rows)
+    print(f"Wrote {len(rows)} rows; trading days={sum(r['is_trading_day']=='True' for r in rows)}")
+if __name__=="__main__": main()

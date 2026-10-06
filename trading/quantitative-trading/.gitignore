@@ -1,0 +1,25 @@
+# Raw market data
+data/raw/
+*.zip
+*.csv.gz
+*.parquet
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Secrets
+.env
+*.pem
+*.key
+
+# IDE
+.vscode/
+.idea/
+
+# Generated
+logs/
+tmp/
+temp/

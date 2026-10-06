@@ -1,0 +1,4 @@
+event_date,symbol,company_name,event_type,old_isin,new_isin,apply_to_membership_state,source,source_reference,notes
+2017-09-21,YESBANK,Yes Bank Ltd.,SUBDIVISION,INE528G01019,INE528G01027,true,OFFICIAL,MSE Listing Circular 5543/2017,Five-for-one subdivision; new ISIN effective for trades from ex-date
+2020-03-16,YESBANK,Yes Bank Ltd.,RECONSTRUCTION,INE528G01027,INE528G01035,true,OFFICIAL,NSE Circular INSP43833,Reconstruction under scheme; new ISIN for post-reconstruction equity
+2023-07-01,HDFC,Housing Development Finance Corporation Ltd.,AMALGAMATION,INE001A01036,INE040A01034,false,OFFICIAL,NSE HDFC-HDFC Bank merger document,HDFC Ltd amalgamated into HDFC Bank effective 2023-07-01
