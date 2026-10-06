@@ -89,6 +89,16 @@ def main():
     start,end=datetime.date.fromisoformat(args.start),datetime.date.fromisoformat(args.end)
     dates=get_trading_dates(start,end)
     manifest=load_manifest()
+    # Remove stale manifest rows inside the requested range that are no longer
+    # trading sessions in the verified calendar (e.g. later holiday corrections).
+    requested_keys={d.isoformat() for d in dates}
+    for key in list(manifest):
+        try:
+            md=datetime.date.fromisoformat(key)
+        except ValueError:
+            continue
+        if start<=md<=end and key not in requested_keys:
+            del manifest[key]
     print(f"Verified trading dates requested: {len(dates)}")
     failures=0
     for i,d in enumerate(dates,1):
