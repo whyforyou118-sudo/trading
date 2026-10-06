@@ -1,23 +1,18 @@
-"""Point-in-time NIFTY 50 membership reconstruction audit.
-
-This validator intentionally refuses to infer the initial 50 constituents from
-transition rows alone. A complete PIT ledger needs an authoritative baseline
-snapshot before the first transition.
-"""
+"""Point-in-time NIFTY 50 membership reconstruction audit."""
 from __future__ import annotations
-
 import csv
+import datetime
+import zipfile
 from collections import Counter
 from dataclasses import dataclass
-from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 REFERENCE = ROOT / "data" / "reference"
+RAW = ROOT / "data" / "raw" / "prices"
 TRANSITIONS = REFERENCE / "nifty50_membership.csv"
 BASELINE = REFERENCE / "nifty50_baseline.csv"
 OUT = ROOT / "audits" / "pit_membership_reconstruction.csv"
-
 
 @dataclass(frozen=True)
 class Security:
@@ -25,79 +20,97 @@ class Security:
     company_name: str
     isin: str
 
-
-def read_csv(path: Path) -> list[dict[str, str]]:
+def read_csv(path: Path):
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         return list(csv.DictReader(f))
 
+def resolve_isins(symbols):
+    found = {}
+    paths = sorted(list(RAW.rglob("*.csv")) + list(RAW.rglob("*.zip")))
+    for path in paths:
+        try:
+            if path.suffix.lower() == ".zip":
+                with zipfile.ZipFile(path) as zf:
+                    names = [n for n in zf.namelist() if n.lower().endswith(".csv")]
+                    streams = [zf.open(n, "r") for n in names]
+            else:
+                streams = [path.open("rb")]
+            for stream in streams:
+                try:
+                    text = stream.read().decode("utf-8-sig")
+                    reader = csv.DictReader(text.splitlines())
+                    cols = set(reader.fieldnames or [])
+                    if "SYMBOL" not in cols or "ISIN" not in cols:
+                        continue
+                    for row in reader:
+                        sym = (row.get("SYMBOL") or "").strip()
+                        if sym not in symbols or (row.get("SERIES") or "").strip() != "EQ":
+                            continue
+                        isin = (row.get("ISIN") or "").strip()
+                        if isin:
+                            if sym in found and found[sym] != isin:
+                                raise RuntimeError(f"conflicting ISINs for {sym}: {found[sym]} vs {isin}")
+                            found[sym] = isin
+                finally:
+                    stream.close()
+        except (zipfile.BadZipFile, UnicodeDecodeError):
+            continue
+    return found
 
-def load_baseline() -> dict[str, Security]:
+def load_baseline():
     if not BASELINE.exists():
-        raise RuntimeError(
-            "authoritative baseline snapshot is missing; transition rows alone "
-            "cannot reconstruct the first PIT NIFTY 50 state"
-        )
-
+        raise RuntimeError("authoritative baseline snapshot is missing")
     rows = read_csv(BASELINE)
-    required = {"symbol", "company_name", "isin"}
+    required = {"symbol", "company_name", "source", "source_reference"}
     if not rows:
         raise RuntimeError("baseline snapshot is empty")
     missing = required - set(rows[0])
     if missing:
         raise RuntimeError(f"baseline columns missing: {sorted(missing)}")
-
     securities = {}
     for row in rows:
-        sec = Security(row["symbol"].strip(), row["company_name"].strip(), row["isin"].strip())
-        if not sec.symbol or not sec.isin:
-            raise RuntimeError("baseline contains blank symbol or ISIN")
-        if sec.symbol in securities:
-            raise RuntimeError(f"duplicate baseline symbol: {sec.symbol}")
-        securities[sec.symbol] = sec
-
-    if len(securities) != 50:
-        raise RuntimeError(f"baseline must contain exactly 50 securities; found {len(securities)}")
-
-    isins = [s.isin for s in securities.values()]
-    dup_isins = [isin for isin, n in Counter(isins).items() if n > 1]
-    if dup_isins:
-        raise RuntimeError(f"duplicate baseline ISINs: {dup_isins}")
-
+        symbol = row["symbol"].strip()
+        if not symbol or symbol in securities:
+            raise RuntimeError(f"invalid or duplicate baseline symbol: {symbol}")
+        securities[symbol] = Security(symbol, row["company_name"].strip(), row.get("isin", "").strip())
+    if len(securities) != 51:
+        raise RuntimeError(f"2017-03-31 baseline expected 51 security rows from NSE Fact Book; found {len(securities)}")
     return securities
 
-
-def load_transitions() -> list[dict[str, str]]:
+def load_transitions():
     rows = read_csv(TRANSITIONS)
     if not rows:
         raise RuntimeError("transition ledger is empty")
-
     required = {"effective_date", "symbol", "company_name", "isin", "action"}
     missing = required - set(rows[0])
     if missing:
         raise RuntimeError(f"transition columns missing: {sorted(missing)}")
-
     for row in rows:
         if row["action"] not in {"INCLUSION", "EXCLUSION"}:
             raise RuntimeError(f"unknown action: {row['action']}")
-        try:
-            date.fromisoformat(row["effective_date"])
-        except ValueError:
-            raise RuntimeError(f"invalid effective date: {row['effective_date']}")
-
+        datetime.date.fromisoformat(row["effective_date"])
     return sorted(rows, key=lambda r: (r["effective_date"], r["symbol"], r["action"]))
 
-
-def reconstruct() -> list[dict[str, object]]:
+def reconstruct():
     members = load_baseline()
     transitions = load_transitions()
 
+    # Resolve missing baseline ISINs from raw exchange files when available.
+    missing_symbols = {s for s, sec in members.items() if not sec.isin}
+    if missing_symbols:
+        resolved = resolve_isins(missing_symbols)
+        members = {
+            s: Security(sec.symbol, sec.company_name, resolved.get(s, sec.isin))
+            for s, sec in members.items()
+        }
+
+    unresolved = [s for s, sec in members.items() if not sec.isin]
+    if unresolved:
+        raise RuntimeError("baseline ISINs unresolved from raw exchange data: " + ", ".join(sorted(unresolved)))
+
     output = []
-    grouped_dates = sorted({r["effective_date"] for r in transitions})
-
-    for effective_date in grouped_dates:
+    for effective_date in sorted({r["effective_date"] for r in transitions}):
         rows = [r for r in transitions if r["effective_date"] == effective_date]
-
-        # Apply all changes atomically for the effective date.
         proposed = dict(members)
         errors = []
 
@@ -115,22 +128,19 @@ def reconstruct() -> list[dict[str, object]]:
                 else:
                     current = proposed[symbol]
                     if current.isin != isin:
-                        errors.append(
-                            f"exclusion ISIN mismatch for {symbol}: "
-                            f"ledger={isin}, current={current.isin}"
-                        )
+                        errors.append(f"exclusion ISIN mismatch for {symbol}: ledger={isin}, current={current.isin}")
                     del proposed[symbol]
 
-        duplicate_isins = [
-            isin for isin, count in Counter(s.isin for s in proposed.values()).items()
-            if count > 1
-        ]
+        duplicate_isins = [i for i,n in Counter(s.isin for s in proposed.values()).items() if n > 1]
         if duplicate_isins:
             errors.append(f"duplicate ISINs after transition: {duplicate_isins}")
 
-        count_ok = len(proposed) == 50
-        if not count_ok:
-            errors.append(f"membership count={len(proposed)}, expected 50")
+        # Historical exception: NSE Fact Book lists 51 rows on 2017-03-31
+        # because both Tata Motors and Tata Motors DVR appear. The Sep-2017
+        # transition removes the DVR and the resulting state is 50.
+        allowed_counts = {51} if effective_date < "2017-09-29" else {50}
+        if len(proposed) not in allowed_counts:
+            errors.append(f"membership count={len(proposed)}, expected one of {sorted(allowed_counts)}")
 
         output.append({
             "effective_date": effective_date,
@@ -140,50 +150,30 @@ def reconstruct() -> list[dict[str, object]]:
             "status": "PASS" if not errors else "FAIL",
             "errors": " | ".join(errors),
         })
-
         if errors:
-            # Stop at the first impossible state; later states depend on it.
             break
-
         members = proposed
-
     return output
 
-
-def main() -> int:
+def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
-
     try:
         results = reconstruct()
     except RuntimeError as exc:
         print(f"PIT MEMBERSHIP: BLOCKED — {exc}")
         return 2
-
     with OUT.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "effective_date",
-                "transition_rows",
-                "member_count",
-                "duplicate_isins",
-                "status",
-                "errors",
-            ],
-        )
+        writer = csv.DictWriter(f, fieldnames=["effective_date","transition_rows","member_count","duplicate_isins","status","errors"])
         writer.writeheader()
         writer.writerows(results)
-
     failures = [r for r in results if r["status"] == "FAIL"]
     print(f"Effective states checked: {len(results)}")
     if failures:
         print("PIT MEMBERSHIP: FAIL")
         print(failures[0]["errors"])
         return 1
-
     print("PIT MEMBERSHIP: PASS")
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
