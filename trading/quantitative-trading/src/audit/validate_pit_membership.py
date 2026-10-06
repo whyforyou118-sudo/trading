@@ -46,6 +46,10 @@ def main():
         members=load_baseline(); transitions=load_transitions(); events=read_csv(EVENTS) if EVENTS.exists() else []
         results=[]
         all_dates=sorted({r["effective_date"] for r in transitions}|{r["event_date"] for r in events if r.get("apply_to_membership_state","").lower()=="true"})
+        # The baseline is explicitly the membership state effective 2017-03-31.
+        # Therefore the 2017-03-31 inclusion/exclusion rows describe how that state
+        # was created and must not be replayed on top of the already-effective baseline.
+        all_dates=[d for d in all_dates if datetime.date.fromisoformat(d)>BASELINE_DATE]
         for date in all_dates:
             proposed=dict(members); errors=[]
             for e in [x for x in events if x.get("event_date")==date and x.get("apply_to_membership_state","").lower()=="true"]:
