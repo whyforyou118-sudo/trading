@@ -1,0 +1,1 @@
+filename,trading_date,row_count,unique_symbols,duplicate_rows,missing_ohlc,invalid_ohlc,negative_price,volume_anomalies,missing_isin,duplicate_symbol_isin,date_consistency,schema_consistency,error

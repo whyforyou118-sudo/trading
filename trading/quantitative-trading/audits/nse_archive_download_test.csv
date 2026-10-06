@@ -1,0 +1,10 @@
+date,url,http_status,file_exists,download_success,file_size,format,sha256
+2017-01-01,https://archives.nseindia.com/content/historical/EQUITIES/2017/CM/cm01JAN2017bhav.csv.zip,503,False,False,280,legacy,
+2018-01-01,https://archives.nseindia.com/content/historical/EQUITIES/2018/CM/cm01JAN2018bhav.csv.zip,503,False,False,280,legacy,
+2019-01-01,https://archives.nseindia.com/content/historical/EQUITIES/2019/CM/cm01JAN2019bhav.csv.zip,503,False,False,280,legacy,
+2020-01-01,https://archives.nseindia.com/content/historical/EQUITIES/2020/CM/cm01JAN2020bhav.csv.zip,503,False,False,280,legacy,
+2021-01-01,https://archives.nseindia.com/content/historical/EQUITIES/2021/CM/cm01JAN2021bhav.csv.zip,503,False,False,280,legacy,
+2022-01-01,https://archives.nseindia.com/content/historical/EQUITIES/2022/CM/cm01JAN2022bhav.csv.zip,503,False,False,280,legacy,
+2023-01-01,https://archives.nseindia.com/content/historical/EQUITIES/2023/CM/cm01JAN2023bhav.csv.zip,503,False,False,280,legacy,
+2024-01-01,https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20240101_F_0000.csv.zip,,False,False,,udiff,
+2025-01-01,https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_20250101_F_0000.csv.zip,,False,False,,udiff,
