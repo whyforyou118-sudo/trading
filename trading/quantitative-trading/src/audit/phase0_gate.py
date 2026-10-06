@@ -5,6 +5,19 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]; AUDITS=ROOT/"audits"; REFERENCE=ROOT/"data"/"reference"; RAW=ROOT/"data"/"raw"/"prices"
 def read(path):
     with path.open("r",encoding="utf-8-sig",newline="") as f:return list(csv.DictReader(f))
+def check_official_session_reference():
+    p=REFERENCE/"nse_official_sessions.csv"
+    if not p.exists():return False,"official NSE session reference missing"
+    rows=read(p)
+    if not rows:return False,"official NSE session reference empty"
+    required={"date","year","is_trading_day","session_type","source","source_reference"}
+    if not required<=set(rows[0]):return False,"official session reference schema incomplete"
+    dates=[r["date"] for r in rows]
+    if len(dates)!=len(set(dates)):return False,"duplicate official session-reference dates"
+    if any(r.get("source")!="NSE_OFFICIAL" for r in rows):return False,"session reference contains non-NSE source"
+    if any(r.get("session_type")=="MUHURAT" and r.get("is_trading_day","").lower()!="true" for r in rows):return False,"Muhurat session incorrectly marked closed"
+    return True,f"{len(rows)} official holiday/session overrides"
+
 def check_calendar():
     p=AUDITS/"nse_trading_calendar_v3.csv"
     if not p.exists():return False,"calendar missing"
@@ -74,7 +87,7 @@ def check_hashes():
     return True,f"{len(rows)} local files hash-verified"
 def main():
     print("="*64+"\nPHASE 0 DATA GATE\n"+"="*64)
-    checks=[("Trading calendar",check_calendar),("PIT membership",check_membership),("Security identity",check_identity_events),("Raw manifest",check_manifest),("Raw file hashes",check_hashes)]
+    checks=[("Official session ref",check_official_session_reference),("Trading calendar",check_calendar),("PIT membership",check_membership),("Security identity",check_identity_events),("Raw manifest",check_manifest),("Raw file hashes",check_hashes)]
     failures=[]
     for name,fn in checks:
         try:ok,msg=fn()
