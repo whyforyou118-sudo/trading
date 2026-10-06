@@ -82,9 +82,9 @@ def main():
             for e in [x for x in events if x.get("event_date")==date and x.get("apply_to_membership_state","").lower()=="true"]:
                 if e["symbol"] in proposed:
                     cur=proposed[e["symbol"]]
-                    if cur.isin!=e["old_isin"]: errors.append(f"identity event old ISIN mismatch for {e["symbol"]}: ledger={e["old_isin"]}, current={cur.isin}")
+                    if cur.isin!=e["old_isin"]: errors.append(f"identity event old ISIN mismatch for {e['symbol']}: ledger={e['old_isin']}, current={cur.isin}")
                     else: proposed[e["symbol"]]=Security(cur.symbol,cur.company_name,e["new_isin"])
-                else: errors.append(f"identity event symbol absent: {e["symbol"]}")
+                else: errors.append(f"identity event symbol absent: {e['symbol']}")
             for r in [x for x in transitions if x["effective_date"]==date]:
                 s,i,a=r["symbol"],r["isin"],r["action"]
                 if a=="INCLUSION":
