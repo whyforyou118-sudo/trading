@@ -16,6 +16,7 @@ def check_calendar():
     if years!=set(range(2017,2026)):return False,f"calendar years incomplete: {sorted(years)}"
     if any(r.get("validation_status","").upper()!="VALIDATED" for r in rows):return False,"calendar contains non-validated rows"
     if any("pandas_market_calendars" in r.get("source","").lower() for r in rows):return False,"calendar relies on pandas_market_calendars"
+    if any(r.get("source","")!="NSE_OFFICIAL" for r in rows if r.get("is_trading_day","").lower()=="true"):return False,"trading-day rows are not explicitly NSE_OFFICIAL"
     return True,f"{len(rows)} calendar rows present"
 def check_membership():
     p=REFERENCE/"nifty50_membership.csv"; b=REFERENCE/"nifty50_baseline.csv"
