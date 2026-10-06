@@ -28,8 +28,8 @@ def get_trading_dates(start,end):
 
 def construct_url(date):
     if date<datetime.date(2024,1,1):
-        filename=f"cm{date:%d}{date:%b}"+f"{date:%Y}bhav.csv.zip"
-        return f"https://archives.nseindia.com/content/historical/EQUITIES/{date:%Y}/CM/{filename}","legacy",filename
+        filename=f"cm{date:%d}{date:%b}".upper()+f"{date:%Y}bhav.csv.zip"
+        return f"https://archives.nseindia.com/content/historical/EQUITIES/{date:%Y}/{date:%b}".upper()+f"/{filename}","legacy",filename
     filename=f"BhavCopy_NSE_CM_0_0_0_{date:%Y%m%d}_F_0000.csv.zip"
     return f"https://nsearchives.nseindia.com/content/cm/{filename}","udiff",filename
 
@@ -44,7 +44,8 @@ def download(url,target,timeout=60):
     fd,tmp=tempfile.mkstemp(prefix=target.name+".",dir=str(target.parent))
     os.close(fd)
     try:
-        with urllib.request.urlopen(url,timeout=timeout) as resp:
+        req=urllib.request.Request(url,headers={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154.0 Safari/537.36","Referer":"https://www.nseindia.com/all-reports"})
+        with urllib.request.urlopen(req,timeout=timeout) as resp:
             status=resp.getcode()
             with open(tmp,"wb") as f:
                 while True:
