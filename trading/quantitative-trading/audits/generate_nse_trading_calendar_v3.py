@@ -1,40 +1,44 @@
-import pandas as pd, pandas_market_calendars as mcal, csv
+"""Generate the research trading calendar from an NSE-verified session reference.
 
-# Define date range
-start = '2017-01-01'
-end = '2025-12-31'
+This script intentionally refuses to infer historical NSE holidays from
+pandas_market_calendars, weekends, or manually embedded dates. Populate
+data/reference/nse_session_reference.csv from official NSE Capital Market
+holiday/session circulars first.
+"""
+from __future__ import annotations
+import csv,datetime
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[1]
+REFERENCE=ROOT/"data"/"reference"/"nse_session_reference.csv"
+OUT=ROOT/"audits"/"nse_trading_calendar_v3.csv"
+START=datetime.date(2017,1,1); END=datetime.date(2025,12,31)
 
-# Obtain NSE schedule using pandas_market_calendars (as base)
-cal = mcal.get_calendar('NSE')
-schedule = cal.schedule(start_date=start, end_date=end)
-schedule = schedule.tz_localize(None)
-
-# Official holiday dates gathered from NSE circulars (2023, 2024) and user note for 2025-08-15
-official_holidays = {
-    # 2023 holidays
-    '2023-01-26','2023-03-08','2023-03-30','2023-04-04','2023-04-07','2023-04-14','2023-05-01','2023-06-28','2023-08-15','2023-09-19','2023-10-02','2023-10-24','2023-11-14','2023-11-27','2023-12-25',
-    # 2024 holidays
-    '2024-01-26','2024-03-08','2024-03-25','2024-03-29','2024-04-11','2024-04-17','2024-05-01','2024-06-17','2024-07-17','2024-08-15','2024-10-02','2024-11-01','2024-11-15','2024-12-25',
-    # User-specified 2025 holiday
-    '2025-08-15'
-}
-
-# Output CSV path
-out_path = r"C:/Users/damar/Downloads/trading/quantitative-trading/audits/nse_trading_calendar_v3.csv"
-with open(out_path, 'w', newline='') as f:
-    writer = csv.writer(f)
-    writer.writerow(['date','year','weekday','is_trading_day','source','source_reference','validation_status'])
-    for idx, row in schedule.iterrows():
-        d = idx.date()
-        date_str = d.isoformat()
-        is_trade = date_str not in official_holidays
-        writer.writerow([
-            date_str,
-            d.year,
-            d.strftime('%A'),
-            is_trade,
-            'pandas_market_calendars+official_holidays',
-            '2023/2024 circulars + user note',
-            'adjusted'
-        ])
-print('Calendar generated with', len(schedule), 'rows')
+def main():
+    if not REFERENCE.exists():
+        raise SystemExit(f"BLOCKED: missing official NSE session reference: {REFERENCE}")
+    ref={}
+    with REFERENCE.open("r",encoding="utf-8-sig",newline="") as f:
+        for r in csv.DictReader(f):
+            d=datetime.date.fromisoformat(r["date"])
+            if not START<=d<=END:continue
+            if r.get("source","").upper()!="NSE_OFFICIAL":raise SystemExit(f"BLOCKED: non-official source for {d}")
+            ref[d]=r
+    missing_years=set(range(2017,2026))-{d.year for d in ref}
+    if missing_years:raise SystemExit(f"BLOCKED: official session reference missing years: {sorted(missing_years)}")
+    rows=[]; d=START
+    while d<=END:
+        r=ref.get(d)
+        if r:
+            trade=r["is_trading_day"].strip().lower()=="true"; source="NSE_OFFICIAL"; note=r.get("reason","")
+        else:
+            trade=d.weekday()<5; source="WEEKDAY_BASELINE"; note="ordinary weekday"
+        rows.append({"date":d.isoformat(),"year":d.year,"weekday":d.strftime("%A"),"is_trading_day":str(trade),"source":source,"source_reference":r.get("source_reference","") if r else "weekend rule","validation_status":"VALIDATED" if source=="NSE_OFFICIAL" or d.weekday()>=5 else "UNVERIFIED","reason":note})
+        d+=datetime.timedelta(days=1)
+    # Every non-weekend session/closure override must be explicitly supported by NSE.
+    if any(x["source"]=="WEEKDAY_BASELINE" and x["is_trading_day"]=="True" for x in rows):
+        raise SystemExit("BLOCKED: ordinary weekdays are not accepted as validated NSE sessions; reference every trading day explicitly.")
+    OUT.parent.mkdir(parents=True,exist_ok=True)
+    with OUT.open("w",newline="",encoding="utf-8") as f:
+        w=csv.DictWriter(f,fieldnames=["date","year","weekday","is_trading_day","source","source_reference","validation_status","reason"]);w.writeheader();w.writerows(rows)
+    print(f"Wrote {len(rows)} calendar rows to {OUT}")
+if __name__=="__main__":main()
