@@ -1,0 +1,22 @@
+name: Phase 0 Python syntax
+on:
+  push:
+    branches: ["phase0-foundation-hardening"]
+  pull_request:
+    branches: ["main"]
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile research scripts
+        working-directory: trading/quantitative-trading
+        run: |
+          python -m py_compile src/audit/check_coverage.py
+          python -m py_compile src/audit/phase0_gate.py
+          python -m py_compile src/audit/validate_pit_membership.py
+          python -m py_compile src/data/download_nse_prices.py
+          python -m py_compile audits/generate_nse_trading_calendar_v3.py
