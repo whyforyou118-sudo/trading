@@ -1,52 +1,52 @@
 symbol,company_name,isin,source,source_reference
-ACC,ACC Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-ADANIPORTS,Adani Ports and Special Economic Zone Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-AMBUJACEM,Ambuja Cements Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-ASIANPAINT,Asian Paints Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-AUROPHARMA,Aurobindo Pharma Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-AXISBANK,Axis Bank Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-BAJAJ-AUTO,Bajaj Auto Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-BANKBARODA,Bank of Baroda,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-BPCL,Bharat Petroleum Corporation Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-BHARTIARTL,Bharti Airtel Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-INFRATEL,Bharti Infratel Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-BOSCHLTD,Bosch Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-CIPLA,Cipla Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-COALINDIA,Coal India Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-DRREDDY,Dr. Reddy's Laboratories Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-EICHERMOT,Eicher Motors Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-GAIL,GAIL (India) Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-GRASIM,Grasim Industries Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-HCLTECH,HCL Technologies Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-HDFCBANK,HDFC Bank Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-HEROMOTOCO,Hero MotoCorp Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-HINDALCO,Hindalco Industries Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-HINDUNILVR,Hindustan Unilever Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-HDFC,Housing Development Finance Corporation Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-ITC,I T C Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-ICICIBANK,ICICI Bank Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-IBULHSGFIN,Indiabulls Housing Finance Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-IOC,Indian Oil Corporation Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-INDUSINDBK,IndusInd Bank Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-INFY,Infosys Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-KOTAKBANK,Kotak Mahindra Bank Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-LT,Larsen & Toubro Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-LUPIN,Lupin Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-M&M,Mahindra & Mahindra Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-MARUTI,Maruti Suzuki India Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-NTPC,NTPC Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-ONGC,Oil & Natural Gas Corporation Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-POWERGRID,Power Grid Corporation of India Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-RELIANCE,Reliance Industries Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-SBIN,State Bank of India,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-SUNPHARMA,Sun Pharmaceutical Industries Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-TCS,Tata Consultancy Services Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-TATAMTRDVR,Tata Motors Ltd DVR,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-TATAMOTORS,Tata Motors Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-TATAPOWER,Tata Power Co. Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-TATASTEEL,Tata Steel Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-TECHM,Tech Mahindra Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-ULTRACEMCO,UltraTech Cement Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
-WIPRO,Wipro Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
+ACC,ACC Ltd.,INE012A01025,OFFICIAL,NSE Fact Book 2017 Table 4-15
+ADANIPORTS,Adani Ports and Special Economic Zone Ltd.,INE742F01042,OFFICIAL,NSE Fact Book 2017 Table 4-15
+AMBUJACEM,Ambuja Cements Ltd.,INE079A01024,OFFICIAL,NSE Fact Book 2017 Table 4-15
+ASIANPAINT,Asian Paints Ltd.,INE021A01026,OFFICIAL,NSE Fact Book 2017 Table 4-15
+AUROPHARMA,Aurobindo Pharma Ltd.,INE406A01037,OFFICIAL,NSE Fact Book 2017 Table 4-15
+AXISBANK,Axis Bank Ltd.,INE238A01034,OFFICIAL,NSE Fact Book 2017 Table 4-15
+BAJAJ-AUTO,Bajaj Auto Ltd.,INE917I01010,OFFICIAL,NSE Fact Book 2017 Table 4-15
+BANKBARODA,Bank of Baroda,INE028A01039,OFFICIAL,NSE Fact Book 2017 Table 4-15
+BPCL,Bharat Petroleum Corporation Ltd.,INE029A01011,OFFICIAL,NSE Fact Book 2017 Table 4-15
+BHARTIARTL,Bharti Airtel Ltd.,INE397D01024,OFFICIAL,NSE Fact Book 2017 Table 4-15
+INFRATEL,Bharti Infratel Ltd.,INE121J01017,OFFICIAL,NSE Fact Book 2017 Table 4-15
+BOSCHLTD,Bosch Ltd.,INE323A01026,OFFICIAL,NSE Fact Book 2017 Table 4-15
+CIPLA,Cipla Ltd.,INE059A01026,OFFICIAL,NSE Fact Book 2017 Table 4-15
+COALINDIA,Coal India Ltd.,INE522F01014,OFFICIAL,NSE Fact Book 2017 Table 4-15
+DRREDDY,Dr. Reddy's Laboratories Ltd.,INE089A01023,OFFICIAL,NSE Fact Book 2017 Table 4-15
+EICHERMOT,Eicher Motors Ltd.,INE066A01021,OFFICIAL,NSE Fact Book 2017 Table 4-15
+GAIL,GAIL (India) Ltd.,INE129A01019,OFFICIAL,NSE Fact Book 2017 Table 4-15
+GRASIM,Grasim Industries Ltd.,INE047A01021,OFFICIAL,NSE Fact Book 2017 Table 4-15
+HCLTECH,HCL Technologies Ltd.,INE860A01027,OFFICIAL,NSE Fact Book 2017 Table 4-15
+HDFCBANK,HDFC Bank Ltd.,INE040A01034,OFFICIAL,NSE Fact Book 2017 Table 4-15
+HEROMOTOCO,Hero MotoCorp Ltd.,INE158A01026,OFFICIAL,NSE Fact Book 2017 Table 4-15
+HINDALCO,Hindalco Industries Ltd.,INE038A01020,OFFICIAL,NSE Fact Book 2017 Table 4-15
+HINDUNILVR,Hindustan Unilever Ltd.,INE030A01027,OFFICIAL,NSE Fact Book 2017 Table 4-15
+HDFC,Housing Development Finance Corporation Ltd.,INE001A01036,OFFICIAL,NSE Fact Book 2017 Table 4-15
+ITC,I T C Ltd.,INE154A01025,OFFICIAL,NSE Fact Book 2017 Table 4-15
+ICICIBANK,ICICI Bank Ltd.,INE090A01021,OFFICIAL,NSE Fact Book 2017 Table 4-15
+IBULHSGFIN,Indiabulls Housing Finance Ltd.,INE148I01020,OFFICIAL,NSE Fact Book 2017 Table 4-15
+IOC,Indian Oil Corporation Ltd.,INE242A01010,OFFICIAL,NSE Fact Book 2017 Table 4-15
+INDUSINDBK,IndusInd Bank Ltd.,INE095A01012,OFFICIAL,NSE Fact Book 2017 Table 4-15
+INFY,Infosys Ltd.,INE009A01021,OFFICIAL,NSE Fact Book 2017 Table 4-15
+KOTAKBANK,Kotak Mahindra Bank Ltd.,INE237A01028,OFFICIAL,NSE Fact Book 2017 Table 4-15
+LT,Larsen & Toubro Ltd.,INE018A01030,OFFICIAL,NSE Fact Book 2017 Table 4-15
+LUPIN,Lupin Ltd.,INE326A01037,OFFICIAL,NSE Fact Book 2017 Table 4-15
+M&M,Mahindra & Mahindra Ltd.,INE101A01026,OFFICIAL,NSE Fact Book 2017 Table 4-15
+MARUTI,Maruti Suzuki India Ltd.,INE585B01010,OFFICIAL,NSE Fact Book 2017 Table 4-15
+NTPC,NTPC Ltd.,INE733E01010,OFFICIAL,NSE Fact Book 2017 Table 4-15
+ONGC,Oil & Natural Gas Corporation Ltd.,INE213A01029,OFFICIAL,NSE Fact Book 2017 Table 4-15
+POWERGRID,Power Grid Corporation of India Ltd.,INE752E01010,OFFICIAL,NSE Fact Book 2017 Table 4-15
+RELIANCE,Reliance Industries Ltd.,INE002A01018,OFFICIAL,NSE Fact Book 2017 Table 4-15
+SBIN,State Bank of India,INE062A01020,OFFICIAL,NSE Fact Book 2017 Table 4-15
+SUNPHARMA,Sun Pharmaceutical Industries Ltd.,INE044A01036,OFFICIAL,NSE Fact Book 2017 Table 4-15
+TCS,Tata Consultancy Services Ltd.,INE467B01029,OFFICIAL,NSE Fact Book 2017 Table 4-15
+TATAMTRDVR,Tata Motors Ltd DVR,IN9155A01020,OFFICIAL,NSE Fact Book 2017 Table 4-15
+TATAMOTORS,Tata Motors Ltd.,INE155A01022,OFFICIAL,NSE Fact Book 2017 Table 4-15
+TATAPOWER,Tata Power Co. Ltd.,INE245A01021,OFFICIAL,NSE Fact Book 2017 Table 4-15
+TATASTEEL,Tata Steel Ltd.,INE081A01020,OFFICIAL,NSE Fact Book 2017 Table 4-15
+TECHM,Tech Mahindra Ltd.,INE669C01036,OFFICIAL,NSE Fact Book 2017 Table 4-15
+ULTRACEMCO,UltraTech Cement Ltd.,INE481G01011,OFFICIAL,NSE Fact Book 2017 Table 4-15
+WIPRO,Wipro Ltd.,INE075A01022,OFFICIAL,NSE Fact Book 2017 Table 4-15
 YESBANK,Yes Bank Ltd.,INE528G01019,OFFICIAL,NSE Fact Book 2017 Table 4-15
-ZEEL,Zee Entertainment Enterprises Ltd.,,OFFICIAL,NSE Fact Book 2017 Table 4-15
+ZEEL,Zee Entertainment Enterprises Ltd.,INE256A01028,OFFICIAL,NSE Fact Book 2017 Table 4-15
