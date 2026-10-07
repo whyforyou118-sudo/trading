@@ -27,49 +27,49 @@
   },
   "preregistered_variants": [
     {
-      "id": "V1_PRIMARY",
+      "id": "CONFIG_01_PRIMARY_12_1_5_Q",
       "formation_months": 12,
       "skip_months": 1,
       "holdings": 5,
       "rebalance": "quarterly"
     },
     {
-      "id": "V2_6_1_5_Q",
+      "id": "CONFIG_02_6_1_5_Q",
       "formation_months": 6,
       "skip_months": 1,
       "holdings": 5,
       "rebalance": "quarterly"
     },
     {
-      "id": "V3_9_1_5_Q",
+      "id": "CONFIG_03_9_1_5_Q",
       "formation_months": 9,
       "skip_months": 1,
       "holdings": 5,
       "rebalance": "quarterly"
     },
     {
-      "id": "V4_12_0_5_Q",
+      "id": "CONFIG_04_12_0_5_Q",
       "formation_months": 12,
       "skip_months": 0,
       "holdings": 5,
       "rebalance": "quarterly"
     },
     {
-      "id": "V5_12_1_3_Q",
+      "id": "CONFIG_05_12_1_3_Q",
       "formation_months": 12,
       "skip_months": 1,
       "holdings": 3,
       "rebalance": "quarterly"
     },
     {
-      "id": "V6_12_1_10_Q",
+      "id": "CONFIG_06_12_1_10_Q",
       "formation_months": 12,
       "skip_months": 1,
       "holdings": 10,
       "rebalance": "quarterly"
     },
     {
-      "id": "V7_12_1_5_M",
+      "id": "CONFIG_07_12_1_5_M",
       "formation_months": 12,
       "skip_months": 1,
       "holdings": 5,
@@ -119,27 +119,6 @@
     "bootstrap_random_seed": 20261007,
     "bootstrap_confidence_level": 0.95,
     "bootstrap_resample_unit": "complete_portfolio_return_interval"
-  },
-  "classification": {
-    "robust_evidence": {
-      "primary_excess_return_gt_zero": true,
-      "bootstrap_ci_excludes_zero_positive": true,
-      "holdout_cumulative_excess_return_gte_zero": true,
-      "positive_variants_min": 5,
-      "permutation_p_max": 0.05
-    },
-    "moderate_evidence": {
-      "primary_excess_return_gt_zero": true,
-      "positive_variants_min": 4,
-      "requires_no_data_or_accounting_invariant_failure": true
-    },
-    "weak_fragile": "Positive primary result that fails the moderate criteria or materially depends on one implementation/cost assumption; cross-sectional and portfolio evidence may disagree.",
-    "failure": {
-      "primary_excess_return_lte_zero": true,
-      "non_positive_variants_min": 5,
-      "permutation_p_min": 0.05
-    },
-    "inconclusive": "Any case not meeting the definitions above, including unresolved data/accounting defects or evidence too weak to distinguish the observed result from noise."
   },
   "invalidity_rules": [
     "Required PIT membership cannot be reconstructed.",
@@ -330,5 +309,23 @@
   "multiple_testing": {
     "preregistered_configurations_count": 7,
     "rule": "All seven count toward research-selection diagnostics if evaluated. No additional configuration becomes confirmatory after results are observed."
+  },
+  "classification": {
+    "FAIL": [
+      "Estimand B annualized net excess return <= 0%",
+      "OR material data/implementation/corporate-action/accounting defect invalidates the result"
+    ],
+    "PASS": [
+      "Estimand B annualized net excess return >= 1%",
+      "AND Random-5 one-sided Monte Carlo p-value < 0.10",
+      "AND no material implementation/data/corporate-action/accounting defect",
+      "AND realistic costs and slippage are included"
+    ],
+    "INCONCLUSIVE": "All remaining cases; do not interpret as proof of no edge or proof of future profitability."
+  },
+  "economic_threshold_rationale": {
+    "hurdle_annualized_net_excess_pct": 1,
+    "equivalent_quarterly_mean_excess_pct": 0.25,
+    "rationale": "These are frozen V6 economic-materiality decision thresholds, not estimates of expected return and not universal statistical constants. Their adequacy is assessed separately against actual implementation costs, taxes, fixed costs, risk and a plain NIFTY index-fund alternative before live deployment."
   }
 }
