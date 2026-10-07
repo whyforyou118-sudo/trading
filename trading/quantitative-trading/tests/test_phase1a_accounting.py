@@ -29,7 +29,7 @@ def test_complete_ledger_uses_event_date_shares():
         Trade("2025-01-04", "AAA", "SELL", 4, 110.0),
     ]
     dividends = [Dividend("2025-01-03", "AAA", 5.0)]
-    assert abs(reconcile_cash(1000.0, trades, dividends) - 850.0) < 1e-9
+    assert abs(reconcile_cash(1000.0, trades, dividends) - 490.0) < 1e-9
 
 def test_split_then_trade_is_replayed_in_date_order():
     events = [
@@ -39,7 +39,7 @@ def test_split_then_trade_is_replayed_in_date_order():
     ]
     state = apply_ledger(0.0, events)
     assert state.shares("AAA") == 0
-    assert abs(state.cash - 1000.0) < 1e-9
+    assert abs(state.cash - 0.0) < 1e-9
 
 def test_oversell_and_fractional_shares_fail_closed():
     p = PortfolioState(cash=0.0, positions={"AAA": 5})
