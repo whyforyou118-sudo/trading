@@ -6,6 +6,8 @@ symbol/date/purpose/ISIN record before a row is marked PASS.
 """
 from __future__ import annotations
 import csv
+import re
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -54,8 +56,8 @@ def main():
         candidates = [
             r for r in raw
             if r.get("symbol","").strip() == symbol
-            and r.get("exDate","").strip() == ex_date
-            and r.get("recDate","").strip() == record_date
+            and nse_date(r.get("exDate","")) == ex_date
+            and nse_date(r.get("recDate","")) == record_date
             and norm(r.get("subject","")) == norm(purpose)
         ]
         status = "PASS" if len(candidates) == 1 else "FAIL"
