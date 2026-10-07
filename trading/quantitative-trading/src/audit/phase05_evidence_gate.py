@@ -41,7 +41,7 @@ def check_tri(cfg):
 
 def check_cost_schedule(cfg):
     p=ROOT/cfg["cost_schedule_file"]
-    ok,msg=artifact(p,{"effective_from","effective_to","brokerage_pct","brokerage_fixed","stt_buy_pct","stt_sell_pct","transaction_charge_pct","sebi_per_crore","stamp_buy_pct","gst_pct","dp_per_scrip","verified","source_reference"})
+    ok,msg=artifact(p,{"effective_from","effective_to","brokerage_pct","brokerage_fixed","stt_buy_pct","stt_sell_pct","transaction_charge_pct","sebi_per_crore","stamp_buy_pct","gst_pct","dp_per_scrip","verified","source_reference","stamp_basis"})
     if not ok:return ok,msg
     rows=read(p)
     if any(r["verified"].strip().upper()!="TRUE" for r in rows):return False,"cost schedule contains unverified rows"
@@ -62,7 +62,7 @@ def check_cost_schedule(cfg):
 def main():
     cfg=json.loads(CFG.read_text(encoding="utf-8"))
     checks=[]
-    checks.append(("Statistical feasibility",artifact(ROOT/"audits/phase05_statistical_feasibility.csv",{"quarterly_decision_count","approx_mdes_sharpe","volatility_scaled_annualized_excess_return_mde"})))
+    checks.append(("Statistical feasibility",artifact(ROOT/"audits/phase05_statistical_feasibility.csv",{"calendar_quarter_end_count","eligible_strategy_decision_count","approx_mdes_sharpe","volatility_scaled_annualized_excess_return_mde"})))
     checks.append(("Top-5 feasibility input",artifact(ROOT/cfg["capital_feasibility_selection_file"],{"rebalance_date","execution_date","rank","symbol","execution_price","price_basis"},1)))
     checks.append(("Capital feasibility",status_artifact(ROOT/"audits/phase05_capital_feasibility.csv",{"capital","rebalance_date","unbuyable_count","cash_pct","mean_abs_weight_deviation"})))
     checks.append(("Cost feasibility",status_artifact(ROOT/"audits/phase05_cost_feasibility.csv",{"status","reason","capital","total_cost","cost_pct_of_starting_capital","slippage_assumption"})))
