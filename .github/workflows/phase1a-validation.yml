@@ -20,4 +20,4 @@ jobs:
       - name: Run Phase 1A tests
         run: |
           cd trading/quantitative-trading
-          python -m pytest -q tests/test_phase1a_inference.py tests/test_phase1a_pit.py tests/test_phase1a_accounting.py tests/test_phase1a_gate2.py tests/test_phase1a_gate3.py tests/test_phase1a_gate4.py
+          python -m pytest -q tests/test_phase1a_inference.py tests/test_phase1a_pit.py tests/test_phase1a_accounting.py tests/test_phase1a_gate2.py tests/test_phase1a_gate3.py tests/test_phase1a_gate4.py tests/test_phase1a_gate5.py
