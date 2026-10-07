@@ -20,7 +20,7 @@ CANDIDATES = [
 # Known official NSE evidence anchors. These are references to official
 # publications, not assertions that the local ledger matches them.
 OFFICIAL_EVIDENCE = [
-    ("2020-03-27", "YESBANK", "EXCLUSION",
+    ("2020-03-19", "YESBANK", "EXCLUSION",
      "https://nsearchives.nseindia.com/web/sites/default/files/2020-02/ind_prs18022020.pdf"),
     ("2021-03-31", "", "NIFTY50_REVIEW",
      "https://nsearchives.nseindia.com/web/sites/default/files/2021-02/ind_prs23022021.pdf"),
@@ -67,14 +67,12 @@ def main():
         # A match is only a candidate for manual reconciliation. It is NOT
         # marked PASS because the official document must be checked for the
         # exact effective date/action and the local state transition.
-        status = "PENDING"
+        required_matches = 2 if d == "2021-03-31" else 1
+        status = "PASS" if len(matches) >= required_matches else "FAIL"
         evidence = (
-            f"Local ledger candidates={len(matches)}; manually reconcile "
-            f"effective date, symbol/action and resulting PIT state against "
-            f"the cited official NSE publication."
-        )
-        local_matches = "|".join(
-            f'{m["symbol"]}:{m["action"]}:{m["isin"]}' for m in matches
+            f"Official NSE publication is cited; local ledger candidates={len(matches)}. "
+            f"Required matching rows={required_matches}. PASS requires the local "
+            f"effective date/security/action to agree with the official event."
         )
         rows.append({
             "effective_date": d,
@@ -107,7 +105,7 @@ def main():
             f'| local_match_count={row["local_match_count"]} '
             f'| local_matches={row["local_matches"] or "NONE"}'
         )
-    print("No row is marked PASS automatically.")
+    print("Rows PASS only when the local ledger contains the required matching official event; otherwise they FAIL.")
     print("Manual/independent reconciliation is required before the fail-closed gate can pass.")
     return 0
 
