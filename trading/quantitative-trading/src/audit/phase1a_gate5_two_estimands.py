@@ -15,6 +15,8 @@ SEED = 20261007
 RANDOM5_DRAWS = 100000
 QUARTERLY_THRESHOLD = 0.0025
 ANNUAL_THRESHOLD = 0.01
+RANDOM5_P_CUTOFF = 0.10
+FIXED_WHOLE_SHARE_CHARGES_A = "EXCLUDE_AND_REPORT_SEPARATELY"
 
 
 @dataclass(frozen=True)
@@ -24,6 +26,9 @@ class EstimandA:
     whole_share: bool = False
     residual_cash: bool = False
     economic_threshold_per_quarter: float = QUARTERLY_THRESHOLD
+    percentage_or_notional_costs: str = "APPLY"
+    slippage: str = "APPLY"
+    fixed_rupee_whole_share_transaction_charges: str = FIXED_WHOLE_SHARE_CHARGES_A
 
 
 @dataclass(frozen=True)
@@ -62,11 +67,18 @@ def classify_estimand_a(mean_net_excess_per_quarter: float, ci_low: float) -> st
     return "INCONCLUSIVE"
 
 
-def classify_estimand_b(annualized_net_excess_return: float, ci_low: float, inference_pass: bool) -> str:
-    if inference_pass and ci_low >= ANNUAL_THRESHOLD:
-        return "PASS"
-    if annualized_net_excess_return < 0 and ci_low < 0:
+def classify_estimand_b(
+    annualized_net_excess_return: float,
+    ci_low: float,
+    random5_p_value: float,
+    implementation_valid: bool,
+) -> str:
+    if not implementation_valid:
         return "FAIL"
+    if annualized_net_excess_return <= 0:
+        return "FAIL"
+    if annualized_net_excess_return >= ANNUAL_THRESHOLD and random5_p_value < RANDOM5_P_CUTOFF:
+        return "PASS"
     return "INCONCLUSIVE"
 
 
@@ -96,7 +108,7 @@ def main() -> int:
     print("PHASE 1A GATE 5 — TWO ESTIMANDS / RANDOM-5 CONTRACT")
     print(f"Estimand A: {a}")
     print(f"Estimand B: {b}")
-    print(f"Random-5 draws: {RANDOM5_DRAWS}; seed: {SEED}; first draw: {first}")
+    print(f"Random-5 draws: {RANDOM5_DRAWS}; seed: {SEED}; p cutoff: {RANDOM5_P_CUTOFF}; first draw: {first}")
     print("STATUS: PASS — inference contract validated; no protected performance run executed.")
     return 0
 
