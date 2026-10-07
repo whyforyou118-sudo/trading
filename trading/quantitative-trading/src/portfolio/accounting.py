@@ -74,6 +74,29 @@ class Dividend:
 
 
 @dataclass(frozen=True)
+class SecurityConversion:
+    """Convert one security into another using an integer share ratio.
+
+    Example: 25 old shares -> 42 new shares is numerator=42, denominator=25.
+    The conversion is fail-closed if the resulting share count is fractional.
+    """
+    date: str
+    old_symbol: str
+    new_symbol: str
+    numerator: int
+    denominator: int
+
+    def __post_init__(self) -> None:
+        if not self.old_symbol or not self.new_symbol:
+            raise ValueError("security symbols cannot be empty")
+        if (isinstance(self.numerator, bool) or isinstance(self.denominator, bool)
+                or self.numerator <= 0 or self.denominator <= 0
+                or int(self.numerator) != self.numerator
+                or int(self.denominator) != self.denominator):
+            raise ValueError("conversion ratio terms must be positive whole numbers")
+
+
+@dataclass(frozen=True)
 class ShareRatioAction:
     date: str
     symbol: str
@@ -88,7 +111,7 @@ class ShareRatioAction:
             raise ValueError("share ratio terms must be positive whole numbers")
 
 
-LedgerEvent = Union[Trade, Dividend, ShareRatioAction]
+LedgerEvent = Union[Trade, Dividend, ShareRatioAction, SecurityConversion]
 
 
 @dataclass
@@ -128,6 +151,18 @@ class PortfolioState:
         self.cash += credit
         self.cumulative_dividends += credit
         return credit
+
+    def apply_security_conversion(self, event: SecurityConversion) -> None:
+        old = self.shares(event.old_symbol)
+        numerator = old * event.numerator
+        if numerator % event.denominator:
+            raise ValueError(
+                f"non-integral security conversion for {event.old_symbol} -> {event.new_symbol}"
+            )
+        new = numerator // event.denominator
+        self.positions.pop(event.old_symbol, None)
+        if new:
+            self.positions[event.new_symbol] = self.shares(event.new_symbol) + new
 
     def apply_share_ratio(self, event: ShareRatioAction) -> None:
         old = self.shares(event.symbol)
@@ -169,13 +204,15 @@ def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent]) -> Portfoli
     before using this function.
     """
     state = PortfolioState(cash=initial_cash)
-    priority = {ShareRatioAction: 0, Trade: 1, Dividend: 2}
+    priority = {SecurityConversion: 0, ShareRatioAction: 0, Trade: 1, Dividend: 2}
     ordered = sorted(enumerate(events), key=lambda x: (x[1].date, priority[type(x[1])], x[0]))
     for _, event in ordered:
         if isinstance(event, Trade):
             state.apply_trade(event)
         elif isinstance(event, Dividend):
             state.apply_dividend(event)
+        elif isinstance(event, SecurityConversion):
+            state.apply_security_conversion(event)
         else:
             state.apply_share_ratio(event)
     return state
