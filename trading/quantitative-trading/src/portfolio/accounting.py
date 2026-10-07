@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from math import isfinite
 from typing import Dict, Iterable, Mapping, Sequence, Union
 
+from .rights import RightsEntitlement
+
 
 @dataclass(frozen=True)
 class CostBreakdown:
@@ -114,7 +116,7 @@ class ShareRatioAction:
             raise ValueError("share ratio terms must be positive whole numbers")
 
 
-LedgerEvent = Union[Trade, Dividend, ShareRatioAction, SecurityConversion]
+LedgerEvent = Union[Trade, Dividend, ShareRatioAction, SecurityConversion, RightsEntitlement]
 
 
 @dataclass
@@ -148,6 +150,13 @@ class PortfolioState:
             else:
                 self.positions.pop(trade.symbol, None)
         self.cumulative_costs = add_costs(self.cumulative_costs, trade.costs)
+
+    def apply_rights_entitlement(self, event: RightsEntitlement) -> int:
+        parent_shares = self.shares(event.parent_symbol)
+        quantity = event.quantity(parent_shares)
+        if quantity:
+            self.positions[event.re_symbol] = self.shares(event.re_symbol) + quantity
+        return quantity
 
     def apply_dividend(self, event: Dividend) -> float:
         credit = self.shares(event.symbol) * event.per_share
@@ -201,18 +210,20 @@ def add_costs(a: CostBreakdown, b: CostBreakdown) -> CostBreakdown:
 def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent]) -> PortfolioState:
     """Replay a complete event ledger in deterministic date/priority order.
 
-    Same-day priority is corporate action, dividend, trade. Dividend events
+    Same-day priority is corporate action, rights entitlement, dividend, trade. Dividend events
     represent ex/entitlement dates, so shares held at the prior close receive
     the dividend even when a same-day open trade subsequently changes the
     position. Historical ingestion must reconcile ex/record/payment dates from
     authoritative source records before using this function.
     """
     state = PortfolioState(cash=initial_cash)
-    priority = {SecurityConversion: 0, ShareRatioAction: 0, Dividend: 1, Trade: 2}
+    priority = {SecurityConversion: 0, ShareRatioAction: 0, RightsEntitlement: 0, Dividend: 1, Trade: 2}
     ordered = sorted(enumerate(events), key=lambda x: (x[1].date, priority[type(x[1])], x[0]))
     for _, event in ordered:
         if isinstance(event, Trade):
             state.apply_trade(event)
+        elif isinstance(event, RightsEntitlement):
+            state.apply_rights_entitlement(event)
         elif isinstance(event, Dividend):
             state.apply_dividend(event)
         elif isinstance(event, SecurityConversion):
