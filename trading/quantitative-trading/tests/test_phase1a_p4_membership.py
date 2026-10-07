@@ -17,7 +17,7 @@ def test_repository_has_42_research_period_transition_rows():
     assert len(research) == 42
 
 
-def test_research_period_membership_rows_are_officially sourced():
+def test_research_period_membership_rows_are_officially_sourced():
     rows = read(ROOT / "data/reference/nifty50_membership.csv")
     research = [
         r for r in rows
