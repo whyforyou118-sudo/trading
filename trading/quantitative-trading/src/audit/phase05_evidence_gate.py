@@ -52,11 +52,17 @@ def check_cost_schedule(cfg):
         a=date.fromisoformat(r["effective_from"]); b=date.fromisoformat(r["effective_to"]) if r["effective_to"].strip() else end
         if b<a:return False,"cost schedule contains an interval with effective_to before effective_from"
         intervals.append((a,b))
+    from datetime import timedelta
     covered=start
     for a,b in sorted(intervals):
-        if a<=covered<=b and b>=covered:
-            covered=b
-            if covered>=end:return True,f"{len(rows)} verified date-effective cost rows covering research interval"
+        if b < start or a > end:
+            continue
+        if a > covered:
+            return False,"verified cost schedule does not continuously cover the declared research interval"
+        if b >= covered:
+            covered=b + timedelta(days=1)
+            if covered > end:
+                return True,f"{len(rows)} verified date-effective cost rows covering research interval"
     return False,"verified cost schedule does not continuously cover the declared research interval"
 
 def main():
