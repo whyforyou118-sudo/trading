@@ -124,6 +124,13 @@ def main():
                 "rank":rank,"symbol":symbol,"momentum_raw_unadjusted":score,
                 "execution_price":p_exec[symbol]["open"],"price_basis":"RAW_UNADJUSTED"
             })
+        if selected == int(cfg["primary_holdings"]):
+            status="PASS"; reason="FIVE_EXECUTABLE_CANDIDATES"
+        elif len(scores) < int(cfg["primary_holdings"]):
+            status="BLOCKED"; reason="INSUFFICIENT_RANKING_CANDIDATES:"+str(len(scores))
+        else:
+            status="BLOCKED"; reason="EXECUTION_PRICE_MISSING:"+str(int(cfg["primary_holdings"])-selected)
+        coverage.append({"rebalance_date":signal.isoformat(),"execution_date":exec_date.isoformat(),"candidate_count":len(scores),"selected_count":selected,"status":status,"reason":reason})
     if not out: raise SystemExit("BLOCKED: no Top-5 feasibility rows produced")
     with OUT.open("w",newline="",encoding="utf-8") as f:
         w=csv.DictWriter(f,fieldnames=out[0].keys()); w.writeheader(); w.writerows(out)
