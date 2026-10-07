@@ -1,163 +1,218 @@
-"""P6.1 — Scan downloaded NSE bhavcopies for the three V6 rights-entitlement instruments.
+"""P6.1b — Download and verify historical NSE prices for V6 rights entitlements.
 
-No external price source is accepted here. The scanner searches the project's
-own immutable NSE CM bhavcopy archives for the RE symbols and reports every
-matching trading row in the relevant entitlement window.
+Uses NSE's official historical CM/equity endpoint. The downloader tries the
+temporary RE symbol with the documented equity-series candidates because RE
+securities are not present in the project's ordinary equity universe archives.
+
+Raw responses are archived and SHA-256 hashed. No third-party price is accepted.
 """
 from __future__ import annotations
 
 import csv
 import datetime as dt
-import io
-import zipfile
+import hashlib
+import json
+import os
+import re
+import tempfile
+import time
 from pathlib import Path
+from urllib.parse import urlencode
+
+import requests
 
 ROOT = Path(__file__).resolve().parents[2]
-PRICE_ROOT = ROOT / "data" / "raw" / "prices"
+RAW = ROOT / "data" / "raw" / "rights_entitlements"
+MANIFEST = RAW / "download_manifest.csv"
 
 TARGETS = {
-    "GRASIM-RE": (dt.date(2024, 1, 1), dt.date(2024, 2, 15)),
-    "TATACONSUM-RE": (dt.date(2024, 7, 15), dt.date(2024, 9, 1)),
-    "ADANI-RE": (dt.date(2025, 11, 20), dt.date(2025, 12, 15)),
+    "GRASIM-RE": (dt.date(2024, 1, 17), dt.date(2024, 1, 23)),
+    "TATACONSUM-RE": (dt.date(2024, 8, 5), dt.date(2024, 8, 12)),
+    "ADANI-RE": (dt.date(2025, 11, 25), dt.date(2025, 12, 5)),
 }
 
-
-def parse_date(value: str) -> dt.date:
-    value = value.strip()
-    for fmt in ("%d-%b-%Y", "%Y-%m-%d", "%d/%m/%Y"):
-        try:
-            return dt.datetime.strptime(value, fmt).date()
-        except ValueError:
-            pass
-    raise ValueError(value)
+SERIES_CANDIDATES = ("BE", "EQ", "SM", "T0")
+FIELDS = [
+    "symbol", "series", "from", "to", "http_status", "status",
+    "rows", "sha256", "raw_file", "error",
+]
 
 
-def find_column(fields, *names):
-    normalized = {f.strip().lower(): f for f in fields}
-    for name in names:
-        if name.lower() in normalized:
-            return normalized[name.lower()]
-    return None
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
 
 
-def iter_csv_members(zpath: Path):
-    with zipfile.ZipFile(zpath) as z:
-        for name in z.namelist():
-            if name.lower().endswith(".csv"):
-                with z.open(name) as raw:
-                    yield name, io.TextIOWrapper(raw, encoding="utf-8-sig", newline="")
-
-
-def scan_zip(zpath: Path, fallback_date: dt.date | None):
-    out = []
+def save_bytes(path: Path, data: bytes):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(prefix=path.name + ".", dir=str(path.parent))
+    os.close(fd)
     try:
-        members = iter_csv_members(zpath)
-        for member_name, stream in members:
-            reader = csv.DictReader(stream)
-            if not reader.fieldnames:
-                continue
-
-            symbol_col = find_column(reader.fieldnames, "SYMBOL", "Symbol")
-            date_col = find_column(reader.fieldnames, "TIMESTAMP", "Date", "DATE")
-            series_col = find_column(reader.fieldnames, "SERIES", "Series")
-            open_col = find_column(reader.fieldnames, "OPEN", "OPEN_PRICE", "Open Price")
-            high_col = find_column(reader.fieldnames, "HIGH", "High Price")
-            low_col = find_column(reader.fieldnames, "LOW", "Low Price")
-            close_col = find_column(reader.fieldnames, "CLOSE", "CLOSE_PRICE", "Close Price")
-            volume_col = find_column(reader.fieldnames, "TOTTRDQTY", "TOTALTRADERVOLUME", "Total Traded Quantity")
-
-            if not symbol_col or not open_col:
-                continue
-
-            for row in reader:
-                symbol = (row.get(symbol_col) or "").strip().upper()
-                if symbol not in TARGETS:
-                    continue
-
-                raw_date = (row.get(date_col) or "").strip() if date_col else ""
-                try:
-                    day = parse_date(raw_date) if raw_date else fallback_date
-                except ValueError:
-                    continue
-
-                if day is None:
-                    continue
-
-                start, end = TARGETS[symbol]
-                if not start <= day <= end:
-                    continue
-
-                out.append({
-                    "date": day.isoformat(),
-                    "symbol": symbol,
-                    "series": (row.get(series_col) or "").strip() if series_col else "",
-                    "open": (row.get(open_col) or "").strip(),
-                    "high": (row.get(high_col) or "").strip() if high_col else "",
-                    "low": (row.get(low_col) or "").strip() if low_col else "",
-                    "close": (row.get(close_col) or "").strip() if close_col else "",
-                    "volume": (row.get(volume_col) or "").strip() if volume_col else "",
-                    "archive": str(zpath.relative_to(ROOT)),
-                    "member": member_name,
-                })
-    except zipfile.BadZipFile:
-        return []
-    return out
-
-
-def infer_date_from_filename(path: Path):
-    import re
-    m = re.search(r"(20\d{6})", path.name)
-    if m:
+        with open(tmp, "wb") as f:
+            f.write(data)
+        os.replace(tmp, path)
+    finally:
         try:
-            return dt.datetime.strptime(m.group(1), "%Y%m%d").date()
-        except ValueError:
+            os.unlink(tmp)
+        except OSError:
             pass
-    m = re.search(r"cm(\d{2})([A-Za-z]{3})(20\d{2})", path.name, re.I)
-    if m:
+
+
+def parse_rows(payload):
+    if not isinstance(payload, dict):
+        return []
+    data = payload.get("data", [])
+    return data if isinstance(data, list) else []
+
+
+def row_date(row):
+    value = row.get("mTIMESTAMP") or row.get("CH_TIMESTAMP") or row.get("date") or row.get("Date")
+    if not value:
+        return None
+    for fmt in ("%d-%b-%Y", "%d-%b-%Y %H:%M:%S", "%Y-%m-%d"):
         try:
-            return dt.datetime.strptime("".join(m.groups()), "%d%b%Y").date()
+            return dt.datetime.strptime(str(value).strip(), fmt).date()
         except ValueError:
             pass
     return None
+
+
+def first_value(row, *keys):
+    for key in keys:
+        if key in row and row[key] not in (None, ""):
+            return row[key]
+    return ""
 
 
 def main():
-    archives = sorted(PRICE_ROOT.rglob("*.zip"))
-    if not archives:
-        raise SystemExit(f"BLOCKED: no NSE bhavcopy archives found under {PRICE_ROOT}")
+    session = requests.Session()
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/154.0 Safari/537.36",
+        "Accept": "application/json,text/plain,*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.nseindia.com/historical/price-and-volume-data-per-security",
+    })
 
-    rows = []
-    for zpath in archives:
-        fallback = infer_date_from_filename(zpath)
-        rows.extend(scan_zip(zpath, fallback))
-
-    rows.sort(key=lambda r: (r["symbol"], r["date"]))
-
-    print("PHASE 1A P6.1 — RIGHTS ENTITLEMENT PRICE SCAN")
-    print(f"Archives scanned: {len(archives)}")
-    print(f"RE rows found: {len(rows)}")
+    print("PHASE 1A P6.1b — NSE RE HISTORICAL PRICE DOWNLOAD")
+    print("Source: NSE official historical CM/equity endpoint")
     print()
 
-    for row in rows:
-        print(
-            f'{row["date"]} | {row["symbol"]} | series={row["series"]} | '
-            f'open={row["open"]} | high={row["high"]} | low={row["low"]} | '
-            f'close={row["close"]} | volume={row["volume"]}'
-        )
+    try:
+        home = session.get("https://www.nseindia.com/", timeout=30)
+        print("NSE session bootstrap:", home.status_code)
+    except Exception as exc:
+        raise SystemExit(f"BLOCKED: NSE session bootstrap failed: {exc}")
 
-    print()
+    results = []
+
     for symbol, (start, end) in TARGETS.items():
-        matching = [r for r in rows if r["symbol"] == symbol]
-        if not matching:
-            print(f"BLOCKED: no local NSE bhavcopy row found for {symbol} in {start}..{end}")
-        else:
-            print(f"{symbol}: {len(matching)} rows; first={matching[0]['date']}; last={matching[-1]['date']}")
+        found = False
 
-    if len({r["symbol"] for r in rows}) < len(TARGETS):
-        print("STATUS: BLOCKED — required RE price evidence is missing from local NSE archives.")
+        for series in SERIES_CANDIDATES:
+            params = {
+                "symbol": symbol,
+                "series": json.dumps([series], separators=(",", ":")),
+                "from": start.strftime("%d-%m-%Y"),
+                "to": end.strftime("%d-%m-%Y"),
+                "csv": "false",
+            }
+            url = "https://www.nseindia.com/api/historical/cm/equity?" + urlencode(params)
+
+            try:
+                response = session.get(url, timeout=30)
+                raw = response.content
+                digest = sha256_bytes(raw)
+                raw_file = RAW / f"{symbol}_{start:%Y%m%d}_{end:%Y%m%d}_{series}.json"
+                save_bytes(raw_file, raw)
+
+                if response.status_code != 200:
+                    results.append({
+                        "symbol": symbol, "series": series,
+                        "from": start.isoformat(), "to": end.isoformat(),
+                        "http_status": response.status_code, "status": "HTTP_FAIL",
+                        "rows": 0, "sha256": digest,
+                        "raw_file": str(raw_file.relative_to(ROOT)), "error": "",
+                    })
+                    continue
+
+                try:
+                    payload = response.json()
+                except Exception as exc:
+                    results.append({
+                        "symbol": symbol, "series": series,
+                        "from": start.isoformat(), "to": end.isoformat(),
+                        "http_status": response.status_code, "status": "JSON_FAIL",
+                        "rows": 0, "sha256": digest,
+                        "raw_file": str(raw_file.relative_to(ROOT)), "error": str(exc),
+                    })
+                    continue
+
+                rows = [
+                    r for r in parse_rows(payload)
+                    if row_date(r) is not None
+                    and start <= row_date(r) <= end
+                ]
+
+                results.append({
+                    "symbol": symbol, "series": series,
+                    "from": start.isoformat(), "to": end.isoformat(),
+                    "http_status": response.status_code,
+                    "status": "FOUND" if rows else "EMPTY",
+                    "rows": len(rows), "sha256": digest,
+                    "raw_file": str(raw_file.relative_to(ROOT)), "error": "",
+                })
+
+                if rows:
+                    out = RAW / f"{symbol}_{start:%Y%m%d}_{end:%Y%m%d}_prices.csv"
+                    with out.open("w", newline="", encoding="utf-8") as f:
+                        fields = ["date", "symbol", "series", "open", "high", "low", "close", "volume"]
+                        writer = csv.DictWriter(f, fieldnames=fields)
+                        writer.writeheader()
+                        for row in sorted(rows, key=row_date):
+                            writer.writerow({
+                                "date": row_date(row).isoformat(),
+                                "symbol": symbol,
+                                "series": first_value(row, "CH_SERIES", "series"),
+                                "open": first_value(row, "CH_OPENING_PRICE", "OPEN"),
+                                "high": first_value(row, "CH_TRADE_HIGH_PRICE", "HIGH"),
+                                "low": first_value(row, "CH_TRADE_LOW_PRICE", "LOW"),
+                                "close": first_value(row, "CH_CLOSING_PRICE", "CLOSE"),
+                                "volume": first_value(row, "CH_TOT_TRADED_QTY", "VOLUME"),
+                            })
+                    found = True
+                    print(f"{symbol}: FOUND series={series}, rows={len(rows)}")
+                    break
+
+                time.sleep(0.5)
+
+            except Exception as exc:
+                results.append({
+                    "symbol": symbol, "series": series,
+                    "from": start.isoformat(), "to": end.isoformat(),
+                    "http_status": "", "status": "REQUEST_FAIL",
+                    "rows": 0, "sha256": "",
+                    "raw_file": "", "error": str(exc),
+                })
+
+        if not found:
+            print(f"{symbol}: NOT FOUND across series candidates {SERIES_CANDIDATES}")
+
+    RAW.mkdir(parents=True, exist_ok=True)
+    with MANIFEST.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=FIELDS)
+        writer.writeheader()
+        writer.writerows(results)
+
+    print()
+    found_symbols = {r["symbol"] for r in results if r["status"] == "FOUND"}
+    print("Symbols with price evidence:", len(found_symbols), "/", len(TARGETS))
+
+    if found_symbols != set(TARGETS):
+        print("STATUS: BLOCKED — one or more RE securities lack official NSE historical rows.")
         return 2
 
-    print("STATUS: PASS — all three RE instruments have local NSE price evidence.")
+    print("STATUS: PASS — all three RE securities have official NSE historical rows.")
     return 0
 
 
