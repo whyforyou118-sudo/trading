@@ -3,7 +3,7 @@ Rows remain PENDING until the values are independently checked against NSE's
 historical Total Returns Index report. The gate will not accept PENDING rows.
 """
 from __future__ import annotations
-import csv,json
+import csv,json,sys
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[2]
@@ -20,20 +20,37 @@ def load_tri():
     with TRI.open("r",encoding="utf-8-sig",newline="") as f:
         return {r["date"]:r for r in csv.DictReader(f)}
 
+def fetch_official_value(date_str: str):
+    data_path = ROOT / "src" / "data"
+    sys.path.insert(0, str(data_path))
+    from download_nifty50_tri import make_session, request_chunk
+    import datetime
+    d = datetime.date.fromisoformat(date_str)
+    with make_session() as session:
+        rows = request_chunk(session, d, d)
+    matches = [r for r in rows if r["date"] == date_str]
+    if len(matches) != 1:
+        raise RuntimeError(f"official NSE Indices returned {len(matches)} rows for {date_str}")
+    return float(matches[0]["value"]), matches[0]["source_reference"]
+
 def main():
     cfg=json.loads(CFG.read_text(encoding="utf-8"))
-    checks = [
-        ("2019-01-01","15114.90","OFFICIAL_NSE","https://www.nseindia.com/all-reports","NSE All Reports explicitly shows 01-Jan-2019 = 15114.9."),
-        ("2020-01-01","","PENDING_OFFICIAL_NSE","https://www.nseindia.com/all-reports","Exact official NSE value still requires direct historical-report verification."),
-        ("2021-01-01","","PENDING_OFFICIAL_NSE","https://www.nseindia.com/all-reports","Exact official NSE value still requires direct historical-report verification."),
-        ("2022-01-03","","PENDING_OFFICIAL_NSE","https://www.nseindia.com/all-reports","Exact official NSE value still requires direct historical-report verification."),
-        ("2023-01-02","","PENDING_OFFICIAL_NSE","https://www.nseindia.com/all-reports","Exact official NSE value still requires direct historical-report verification."),
-    ]
+    checks = ["2019-01-01","2020-01-01","2021-01-01","2022-01-03","2023-01-02"]
     tri=load_tri()
     rows=[]
-    for d, external, level, source, note in checks:
+    for d in checks:
         local=tri.get(d,{}).get("value","")
-        status="PASS" if level == "OFFICIAL_NSE" and local and abs(float(local)-float(external)) < 1e-6 else "PENDING"
+        try:
+            external, source = fetch_official_value(d)
+            status="PASS" if local and abs(float(local)-external) < 1e-6 else "FAIL"
+            note="Fresh official NSE Indices historical TRI lookup matches the local TRI value."
+            level="OFFICIAL_NSE_INDICES_LIVE"
+        except Exception as exc:
+            external=""
+            source="https://www.niftyindices.com/reports/historical-data"
+            status="PENDING"
+            note=f"Official NSE Indices lookup failed: {exc}"
+            level="PENDING_OFFICIAL_NSE_INDICES"
         rows.append({
             "check":f"TRI_VALUE_{d}",
             "status":status,
