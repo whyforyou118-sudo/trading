@@ -1,19 +1,14 @@
 """Transaction-level portfolio accounting engine for Phase 1A.
 
-This module is deliberately independent of signal generation. It models:
-- whole-share trades;
-- explicit cash;
-- itemized transaction costs;
-- separate dividend cash credits;
-- stock split/share-ratio corporate actions;
-- mark-to-market NAV.
-
-No performance assumptions or strategy selection logic live here.
+The ledger is independent of signal generation. It models whole-share trades,
+explicit cash, itemized costs, dividends, share-ratio corporate actions, and
+mark-to-market NAV.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, Mapping
+from math import isfinite
+from typing import Dict, Iterable, Mapping, Sequence, Union
 
 
 @dataclass(frozen=True)
@@ -27,12 +22,16 @@ class CostBreakdown:
     dp_charge: float = 0.0
     slippage: float = 0.0
 
+    def __post_init__(self) -> None:
+        values = (self.brokerage, self.stt, self.transaction_charges, self.sebi,
+                  self.stamp_duty, self.gst, self.dp_charge, self.slippage)
+        if not all(isfinite(float(v)) and v >= 0 for v in values):
+            raise ValueError("all transaction costs must be finite and non-negative")
+
     @property
     def total(self) -> float:
-        return sum((
-            self.brokerage, self.stt, self.transaction_charges, self.sebi,
-            self.stamp_duty, self.gst, self.dp_charge, self.slippage,
-        ))
+        return sum((self.brokerage, self.stt, self.transaction_charges, self.sebi,
+                    self.stamp_duty, self.gst, self.dp_charge, self.slippage))
 
 
 @dataclass(frozen=True)
@@ -47,10 +46,12 @@ class Trade:
     def __post_init__(self) -> None:
         if self.side not in {"BUY", "SELL"}:
             raise ValueError("side must be BUY or SELL")
-        if self.shares <= 0 or int(self.shares) != self.shares:
+        if isinstance(self.shares, bool) or self.shares <= 0 or int(self.shares) != self.shares:
             raise ValueError("shares must be a positive whole number")
-        if self.price <= 0:
-            raise ValueError("price must be positive")
+        if not isfinite(float(self.price)) or self.price <= 0:
+            raise ValueError("price must be a finite positive number")
+        if not self.symbol:
+            raise ValueError("symbol cannot be empty")
 
     @property
     def gross_value(self) -> float:
@@ -58,9 +59,7 @@ class Trade:
 
     @property
     def cash_delta(self) -> float:
-        if self.side == "BUY":
-            return -(self.gross_value + self.costs.total)
-        return self.gross_value - self.costs.total
+        return -(self.gross_value + self.costs.total) if self.side == "BUY" else self.gross_value - self.costs.total
 
 
 @dataclass(frozen=True)
@@ -70,25 +69,26 @@ class Dividend:
     per_share: float
 
     def __post_init__(self) -> None:
-        if self.per_share < 0:
-            raise ValueError("per_share cannot be negative")
+        if not isfinite(float(self.per_share)) or self.per_share < 0:
+            raise ValueError("per_share must be finite and non-negative")
 
 
 @dataclass(frozen=True)
 class ShareRatioAction:
-    """Share-count action such as a stock split/bonus represented by ratio.
-
-    new_shares = old_shares * numerator / denominator.
-    No cash is created by the share-count transformation itself.
-    """
     date: str
     symbol: str
     numerator: int
     denominator: int
 
     def __post_init__(self) -> None:
-        if self.numerator <= 0 or self.denominator <= 0:
-            raise ValueError("share ratio terms must be positive")
+        if (isinstance(self.numerator, bool) or isinstance(self.denominator, bool)
+                or self.numerator <= 0 or self.denominator <= 0
+                or int(self.numerator) != self.numerator
+                or int(self.denominator) != self.denominator):
+            raise ValueError("share ratio terms must be positive whole numbers")
+
+
+LedgerEvent = Union[Trade, Dividend, ShareRatioAction]
 
 
 @dataclass
@@ -98,30 +98,33 @@ class PortfolioState:
     cumulative_costs: CostBreakdown = field(default_factory=CostBreakdown)
     cumulative_dividends: float = 0.0
 
+    def __post_init__(self) -> None:
+        if not isfinite(float(self.cash)):
+            raise ValueError("cash must be finite")
+        for symbol, qty in self.positions.items():
+            if not symbol or isinstance(qty, bool) or qty < 0 or int(qty) != qty:
+                raise ValueError("positions must contain non-negative whole shares")
+
     def shares(self, symbol: str) -> int:
         return self.positions.get(symbol, 0)
 
     def apply_trade(self, trade: Trade) -> None:
-        held = self.positions.get(trade.symbol, 0)
+        held = self.shares(trade.symbol)
+        if trade.side == "SELL" and trade.shares > held:
+            raise ValueError(f"cannot sell {trade.shares} {trade.symbol}; only {held} held")
+        self.cash += trade.cash_delta
         if trade.side == "BUY":
             self.positions[trade.symbol] = held + trade.shares
         else:
-            if trade.shares > held:
-                raise ValueError(
-                    f"cannot sell {trade.shares} {trade.symbol}; only {held} held"
-                )
             remaining = held - trade.shares
             if remaining:
                 self.positions[trade.symbol] = remaining
             else:
                 self.positions.pop(trade.symbol, None)
-
-        self.cash += trade.cash_delta
         self.cumulative_costs = add_costs(self.cumulative_costs, trade.costs)
 
     def apply_dividend(self, event: Dividend) -> float:
-        qty = self.shares(event.symbol)
-        credit = qty * event.per_share
+        credit = self.shares(event.symbol) * event.per_share
         self.cash += credit
         self.cumulative_dividends += credit
         return credit
@@ -130,10 +133,7 @@ class PortfolioState:
         old = self.shares(event.symbol)
         numerator = old * event.numerator
         if numerator % event.denominator:
-            raise ValueError(
-                f"non-integral share result for {event.symbol}: "
-                f"{old} * {event.numerator}/{event.denominator}"
-            )
+            raise ValueError(f"non-integral share result for {event.symbol}")
         new = numerator // event.denominator
         if new:
             self.positions[event.symbol] = new
@@ -144,41 +144,48 @@ class PortfolioState:
         missing = [s for s in self.positions if s not in prices]
         if missing:
             raise ValueError(f"missing mark price(s): {missing}")
-        invalid = [s for s, p in prices.items() if p <= 0]
+        invalid = [s for s, p in prices.items() if not isfinite(float(p)) or p <= 0]
         if invalid:
-            raise ValueError(f"non-positive mark price(s): {invalid}")
-        return self.cash + sum(
-            qty * prices[symbol] for symbol, qty in self.positions.items()
-        )
+            raise ValueError(f"invalid mark price(s): {invalid}")
+        return self.cash + sum(qty * prices[symbol] for symbol, qty in self.positions.items())
 
 
 def add_costs(a: CostBreakdown, b: CostBreakdown) -> CostBreakdown:
     return CostBreakdown(
-        brokerage=a.brokerage + b.brokerage,
-        stt=a.stt + b.stt,
+        brokerage=a.brokerage + b.brokerage, stt=a.stt + b.stt,
         transaction_charges=a.transaction_charges + b.transaction_charges,
-        sebi=a.sebi + b.sebi,
-        stamp_duty=a.stamp_duty + b.stamp_duty,
-        gst=a.gst + b.gst,
-        dp_charge=a.dp_charge + b.dp_charge,
+        sebi=a.sebi + b.sebi, stamp_duty=a.stamp_duty + b.stamp_duty,
+        gst=a.gst + b.gst, dp_charge=a.dp_charge + b.dp_charge,
         slippage=a.slippage + b.slippage,
     )
 
 
-def reconcile_cash(
-    initial_cash: float,
-    trades: Iterable[Trade],
-    dividends: Iterable[Dividend],
-) -> float:
-    """Independent cash reconciliation from the event ledger."""
-    cash = initial_cash
-    for trade in trades:
-        cash += trade.cash_delta
-    for dividend in dividends:
-        # Caller must provide dividend amounts as explicit cash credits in the
-        # ledger; this helper is intended for events whose shares are known
-        # before the credit is generated.
-        raise ValueError(
-            "Use PortfolioState.apply_dividend for share-dependent dividend credits"
-        )
-    return cash
+def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent]) -> PortfolioState:
+    """Replay a complete event ledger in deterministic date/priority order.
+
+    Same-day priority is corporate action, trade, dividend. This makes the
+    entitlement convention explicit and deterministic for synthetic tests;
+    historical ingestion must encode the source's ex/record-date convention
+    before using this function.
+    """
+    state = PortfolioState(cash=initial_cash)
+    priority = {ShareRatioAction: 0, Trade: 1, Dividend: 2}
+    ordered = sorted(enumerate(events), key=lambda x: (x[1].date, priority[type(x[1])], x[0]))
+    for _, event in ordered:
+        if isinstance(event, Trade):
+            state.apply_trade(event)
+        elif isinstance(event, Dividend):
+            state.apply_dividend(event)
+        else:
+            state.apply_share_ratio(event)
+    return state
+
+
+def reconcile_cash(initial_cash: float, trades: Iterable[Trade], dividends: Iterable[Dividend]) -> float:
+    """Replay trades and dividends and return final cash.
+
+    Dividend credits are computed from shares actually held at the event date;
+    they are never guessed from a static share count.
+    """
+    events: list[LedgerEvent] = [*trades, *dividends]
+    return apply_ledger(initial_cash, events).cash

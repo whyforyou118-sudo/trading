@@ -1,0 +1,23 @@
+name: phase1a-validation
+
+on:
+  push:
+    branches: [phase1a-validation-gate]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test runner
+        run: python -m pip install --upgrade pip pytest
+      - name: Compile Phase 1A Python
+        run: python -m compileall trading/quantitative-trading/src trading/quantitative-trading/tests
+      - name: Run Phase 1A tests
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1a_inference.py tests/test_phase1a_pit.py tests/test_phase1a_accounting.py
