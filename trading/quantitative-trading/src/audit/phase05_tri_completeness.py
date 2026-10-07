@@ -93,8 +93,6 @@ def main() -> int:
         ("EXTRA_NONTRADING_DATES", len(extras), 0, "PASS" if not other_extra else "FAIL"),
         ("WEEKEND_EXTRA_DATES", len(known_weekend_extra), 0, "INFO" if known_weekend_extra else "PASS"),
         ("OTHER_EXTRA_DATES", len(other_extra), 0, "PASS" if not other_extra else "FAIL"),
-        ("WEEKEND_EXTRA_DATES", len(known_weekend_extra), 0, "INFO" if known_weekend_extra else "PASS"),
-        ("OTHER_EXTRA_DATES", len(other_extra), 0, "PASS" if not other_extra else "FAIL"),
         ("DUPLICATE_TRI_DATES", len(duplicates), 0, "PASS" if not duplicates else "FAIL"),
         ("INVALID_TRI_ROWS", len(bad_rows), 0, "PASS" if not bad_rows else "FAIL"),
     ]
@@ -131,7 +129,7 @@ def main() -> int:
                 "detail": detail,
             })
 
-    overall = "PASS" if all(x[3] == "PASS" for x in checks) else "FAIL"
+    overall = "PASS" if not any(x[3] == "FAIL" for x in checks) else "FAIL"
     summary = {
         "status": overall,
         "research_start": start,
