@@ -383,3 +383,14 @@ No additional strategy variant may be promoted into the primary result table aft
 
 The complete Phase 1A preregistration is stored in `config/phase1a_preregistration.json` and must be hashed/committed before the first Phase 1 performance run.
 
+## 19. Deterministic bootstrap rule
+
+The primary portfolio inference uses a stationary bootstrap with a fixed mean block length of **3 portfolio-return intervals**, corresponding to the quarterly primary strategy's short return history.
+
+For the monthly robustness variant, use the same calendar-time principle by setting the mean block length to 3 monthly observations. No block length may be selected after observing performance.
+
+The report must include a sensitivity check at mean block lengths 2, 3, and 4. This sensitivity is a statistical robustness diagnostic only; it does not create additional strategy variants.
+
+The random-number seed for bootstrap resampling is fixed at **20261007**. The number of bootstrap replications is fixed at **10,000**.
+
+
