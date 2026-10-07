@@ -1,14 +1,14 @@
 """Audit the three rights events relevant to the frozen V6 signal path.
 
 This is a treatment audit, not a performance adjustment engine. It records the
-NSE rights ratio/issue price from the corporate-action subject and computes the
-reference ex-rights factor when a cum-date close is supplied by the caller.
-No factor is persisted as production data by this script.
+NSE rights ratio/issue price from the corporate-action subject. No production
+adjustment factor is persisted by this script.
 """
 from __future__ import annotations
 
 import csv
 import re
+from datetime import datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -26,6 +26,11 @@ PATTERN = re.compile(
 )
 
 
+def normalize_nse_date(value: str) -> str:
+    value = value.strip()
+    return datetime.strptime(value, "%d-%b-%Y").date().isoformat()
+
+
 def main() -> int:
     if not CA.exists():
         raise SystemExit(f"BLOCKED: missing {CA}")
@@ -34,33 +39,48 @@ def main() -> int:
         rows = list(csv.DictReader(f))
 
     found = []
+
     for row in rows:
-        key = (
-            row.get("symbol", "").strip().upper(),
-            row.get("exDate", "").strip(),
-        )
-        if key not in TARGETS:
+        symbol = row.get("symbol", "").strip().upper()
+        raw_date = row.get("exDate", "").strip()
+
+        if not raw_date:
+            continue
+
+        try:
+            ex_date = normalize_nse_date(raw_date)
+        except ValueError:
+            continue
+
+        if (symbol, ex_date) not in TARGETS:
             continue
 
         match = PATTERN.search(row.get("subject", ""))
+
         if not match:
-            print("BLOCKED: rights subject could not be parsed:", row.get("subject"))
+            print(
+                "BLOCKED: rights subject could not be parsed:",
+                row.get("subject"),
+            )
             return 1
 
         found.append(
             {
-                "symbol": key[0],
-                "ex_date": key[1],
+                "symbol": symbol,
+                "ex_date": ex_date,
                 "ratio_A": int(match.group("a")),
                 "ratio_B": int(match.group("b")),
-                "premium": float(match.group("p")),
+                "issue_price": float(match.group("p")),
                 "subject": row.get("subject", ""),
                 "record_date": row.get("recDate", ""),
             }
         )
 
     if len(found) != len(TARGETS):
-        print("BLOCKED: expected three PIT rights events, found", len(found))
+        print(
+            "BLOCKED: expected three PIT rights events, found",
+            len(found),
+        )
         for x in found:
             print(x)
         return 1
@@ -74,12 +94,16 @@ def main() -> int:
         print(
             f'{x["ex_date"]} | {x["symbol"]} | '
             f'ratio={x["ratio_A"]}:{x["ratio_B"]} | '
-            f'issue_price={x["premium"]} | '
+            f'issue_price={x["issue_price"]} | '
             f'record_date={x["record_date"]}'
         )
 
     print()
-    print("STATUS: BLOCKED — cum-date close and explicit subscription/renunciation policy are required before production treatment.")
+    print(
+        "STATUS: BLOCKED — cum-date close and explicit "
+        "subscription/renunciation policy are required "
+        "before production treatment."
+    )
     return 2
 
 
