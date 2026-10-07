@@ -68,8 +68,8 @@ def main():
         candidates = [
             r for r in raw
             if r.get("symbol","").strip() == symbol
-            and nse_date(r.get("exDate","")) == ex_date
-            and nse_date(r.get("recDate","")) == record_date
+            and nse_date(r.get("exDate","")) == nse_date(ex_date)
+            and nse_date(r.get("recDate","")) == nse_date(record_date)
             and norm(r.get("subject","")) == norm(purpose)
         ]
         status = "PASS" if len(candidates) == 1 else "FAIL"
