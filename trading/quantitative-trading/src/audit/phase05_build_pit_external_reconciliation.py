@@ -73,6 +73,9 @@ def main():
             f"effective date, symbol/action and resulting PIT state against "
             f"the cited official NSE publication."
         )
+        local_matches = "|".join(
+            f'{m["symbol"]}:{m["action"]}:{m["isin"]}' for m in matches
+        )
         rows.append({
             "effective_date": d,
             "check": f"PIT_EXTERNAL_{d}_{symbol or 'REVIEW'}",
@@ -80,9 +83,7 @@ def main():
             "official_event_type": event_type,
             "security": symbol,
             "local_match_count": len(matches),
-            "local_matches": "|".join(
-                f'{m["symbol"]}:{m["action"]}:{m["isin"]}' for m in matches
-            ),
+            "local_matches": local_matches,
             "official_source_reference": url,
             "evidence": evidence,
         })
@@ -99,6 +100,13 @@ def main():
     print("PHASE 0.5 PIT EXTERNAL RECONCILIATION")
     print(f"Local PIT ledger: {source}")
     print(f"Wrote {len(rows)} PENDING official-evidence rows: {OUT}")
+    for row in rows:
+        print(
+            f'{row["effective_date"]} | official={row["official_event_type"]} '
+            f'| security={row["security"] or "REVIEW"} '
+            f'| local_match_count={row["local_match_count"]} '
+            f'| local_matches={row["local_matches"] or "NONE"}'
+        )
     print("No row is marked PASS automatically.")
     print("Manual/independent reconciliation is required before the fail-closed gate can pass.")
     return 0
