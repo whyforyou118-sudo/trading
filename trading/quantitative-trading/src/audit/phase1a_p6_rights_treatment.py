@@ -112,9 +112,29 @@ def main() -> int:
         checks[1] = ("re_price_data", price_ok, f"{len(rows)} archived first-session row(s) for {re_symbol}.")
         checks[2] = ("re_first_tradable_open", price_ok, f"{first_date} open={expected_open:.2f}.")
 
-        rule_ok = ent.quantity(e.b - 1) == 0 and ent.quantity(e.b) == e.a
-        checks[3] = ("entitlement_rule", rule_ok, f"quantity({e.b - 1})=0; quantity({e.b})={e.a}.")
-        checks[4] = ("fractional_entitlement_rule", rule_ok, "fractional entitlement is ignored; no additional subscription is modeled.")
+        # The issuer-defined entitlement is an integer floor:
+        # floor(parent_shares * a / b).  Shares below b can still create
+        # entitlements when the ratio numerator a > 1; e.g. 178 shares
+        # under 6:179 create 5 REs.  The previous audit incorrectly required
+        # quantity(b - 1) == 0, which is not the issuer ratio rule.
+        expected_b_minus_1 = ((e.b - 1) * e.a) // e.b
+        expected_b = (e.b * e.a) // e.b
+        rule_ok = (
+            ent.quantity(e.b - 1) == expected_b_minus_1
+            and ent.quantity(e.b) == expected_b == e.a
+        )
+        checks[3] = (
+            "entitlement_rule",
+            rule_ok,
+            f"quantity({e.b - 1})={ent.quantity(e.b - 1)} "
+            f"(expected {expected_b_minus_1}); quantity({e.b})={ent.quantity(e.b)} "
+            f"(expected {expected_b}).",
+        )
+        checks[4] = (
+            "fractional_entitlement_rule",
+            rule_ok,
+            "Fractional RE entitlements are discarded via integer floor; no additional subscription is modeled.",
+        )
 
         interval = None
         for row in cost_rows:
