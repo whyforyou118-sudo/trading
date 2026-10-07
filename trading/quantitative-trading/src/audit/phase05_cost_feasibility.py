@@ -9,13 +9,14 @@ CFG=ROOT/"config/phase05_config.json"; OUT=ROOT/"audits/phase05_cost_feasibility
 SCHEDULE_FIELDS={
     "effective_from","effective_to","brokerage_pct","brokerage_fixed",
     "stt_buy_pct","stt_sell_pct","transaction_charge_pct","sebi_per_crore",
-    "stamp_buy_pct","gst_pct","dp_per_scrip","verified","source_reference"
+    "stamp_buy_pct","gst_pct","dp_per_scrip","verified","source_reference",
+    "stamp_basis"
 }
 OUTPUT_FIELDS=[
     "status","reason","capital","annual_turnover","brokerage","stt",
     "transaction_charges","sebi","stamp_duty","gst","dp_charges","slippage",
     "total_cost","cost_pct_of_starting_capital","slippage_assumption",
-    "scenario","effective_from","effective_to","source_reference"
+    "scenario","stamp_basis","effective_from","effective_to","source_reference"
 ]
 
 def blocked(reason, slippage):
@@ -51,7 +52,7 @@ def load_schedule(path):
 
 def pct(row,key): return float(row[key])/100.0
 
-def scenario(row,capital,holdings=5,rebalances=4,slippage=0.001):
+def scenario(row,capital,holdings=5,rebalances=4,slippage=0.001,stamp_pct_override=None,scenario_label=None):
     trade_value=capital
     annual_turnover=trade_value*2*rebalances
     buy=trade_value*rebalances; sell=buy
@@ -60,7 +61,8 @@ def scenario(row,capital,holdings=5,rebalances=4,slippage=0.001):
     stt=buy*pct(row,"stt_buy_pct")+sell*pct(row,"stt_sell_pct")
     transaction=annual_turnover*pct(row,"transaction_charge_pct")
     sebi=annual_turnover/1e7*float(row["sebi_per_crore"])
-    stamp=buy*pct(row,"stamp_buy_pct")
+    stamp_rate=pct(row,"stamp_buy_pct") if stamp_pct_override is None else float(stamp_pct_override)
+    stamp=buy*stamp_rate
     gst=(brokerage+transaction+sebi)*pct(row,"gst_pct")
     dp=holdings*rebalances*float(row["dp_per_scrip"])
     slip=annual_turnover*slippage
@@ -71,7 +73,8 @@ def scenario(row,capital,holdings=5,rebalances=4,slippage=0.001):
         "stamp_duty":stamp,"gst":gst,"dp_charges":dp,"slippage":slip,
         "total_cost":total,"cost_pct_of_starting_capital":total/capital,
         "slippage_assumption":slippage,
-        "scenario":"100_percent_liquidate_and_rebuild_each_quarter"
+        "scenario":scenario_label or "100_percent_liquidate_and_rebuild_each_quarter",
+        "stamp_basis":row.get("stamp_basis","")
     }
 
 def main():
@@ -92,15 +95,26 @@ def main():
     rows=[]
     for cap in cfg["capital_scenarios"]:
         for s in schedule:
-            x=scenario(s,float(cap),slippage=a.slippage)
-            x.update(
-                status="PASS",
-                reason="verified schedule row",
-                effective_from=s["effective_from"],
-                effective_to=s["effective_to"],
-                source_reference=s["source_reference"],
-            )
-            rows.append(x)
+            basis=s.get("stamp_basis","")
+            if basis == "STATE_AGNOSTIC_SENSITIVITY_ANCHOR":
+                anchor=pct(s,"stamp_buy_pct")
+                labels=[("STATE_AGNOSTIC_STAMP_SENSITIVITY_ANCHOR", anchor)]
+            else:
+                labels=[("100_percent_liquidate_and_rebuild_each_quarter", None)]
+            for label,override in labels:
+                x=scenario(
+                    s,float(cap),slippage=a.slippage,
+                    stamp_pct_override=override,
+                    scenario_label=label
+                )
+                x.update(
+                    status="PASS",
+                    reason="verified schedule row; stamp-duty basis explicitly labeled",
+                    effective_from=s["effective_from"],
+                    effective_to=s["effective_to"],
+                    source_reference=s["source_reference"],
+                )
+                rows.append(x)
 
     with OUT.open("w",newline="",encoding="utf-8") as f:
         w=csv.DictWriter(f,fieldnames=OUTPUT_FIELDS)
