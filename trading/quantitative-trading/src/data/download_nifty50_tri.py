@@ -50,9 +50,9 @@ def request_chunk(session,start,end):
     r=session.post(TRI_URL,json=payload,timeout=120)
     r.raise_for_status()
     raw=r.text.lstrip("\ufeff").strip()
-        if not raw or raw[:1] not in "{[":
-            raise RuntimeError(f"Nifty Indices returned non-JSON response: {raw[:200]!r}")
-        obj=json.loads(raw)
+    if not raw or raw[:1] not in "{[":
+        raise RuntimeError(f"Nifty Indices returned non-JSON response: {raw[:200]!r}")
+    obj=json.loads(raw)
     raw=obj.get("d",obj)
     if isinstance(raw,str): raw=json.loads(raw)
     if not isinstance(raw,list): raise RuntimeError(f"Unexpected TRI response: {type(raw)}")
