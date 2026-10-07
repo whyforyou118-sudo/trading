@@ -55,3 +55,26 @@ def test_oversell_and_fractional_shares_fail_closed():
         pass
     else:
         raise AssertionError("fractional shares must fail")
+
+
+def test_security_conversion_uses_production_ledger_path():
+    state = apply_ledger(
+        0.0,
+        [
+            Trade("2020-01-01", "HDFC", "BUY", 25, 100.0),
+            SecurityConversion("2020-02-01", "HDFC", "HDFCBANK", 42, 25),
+        ],
+    )
+    assert state.shares("HDFC") == 0
+    assert state.shares("HDFCBANK") == 42
+
+
+def test_security_conversion_rejects_fractional_result():
+    with pytest.raises(ValueError):
+        apply_ledger(
+            0.0,
+            [
+                Trade("2020-01-01", "OLD", "BUY", 1, 100.0),
+                SecurityConversion("2020-02-01", "OLD", "NEW", 1, 2),
+            ],
+        )
