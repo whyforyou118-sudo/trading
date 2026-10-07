@@ -1,4 +1,4 @@
-from audit.phase1a_gate5_two_estimands import (
+from pathlib import Path\nimport sys\n\nROOT = Path(__file__).resolve().parents[1]\nsys.path.insert(0, str(ROOT / "src"))\n\nfrom audit.phase1a_gate5_two_estimands import (
     EstimandA, EstimandB, classify_estimand_a, classify_estimand_b,
     random5_draw_indices, validate_same_null_contract,
 )
