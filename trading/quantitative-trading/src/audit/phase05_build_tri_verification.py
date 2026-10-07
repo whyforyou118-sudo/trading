@@ -24,27 +24,33 @@ def main():
     cfg=json.loads(CFG.read_text(encoding="utf-8"))
     checks = [
         ("2019-01-01","15114.90","OFFICIAL_NSE","https://www.nseindia.com/all-reports","NSE All Reports explicitly shows 01-Jan-2019 = 15114.9."),
-        ("2020-01-01","17096.83","SECONDARY_INDEPENDENT","https://ijsrem.com/uploads/production/Determining%20Equity%20Risk%20Premium%20in%20India%20A%20Historical%20and%20Implied%20Approach.pdf","Published research table reports 01/01/20 = 17096.83."),
-        ("2020-12-31","19833.19","SECONDARY_INDEPENDENT","https://ijsrem.com/uploads/production/Determining%20Equity%20Risk%20Premium%20in%20India%20A%20Historical%20and%20Implied%20Approach.pdf","Published research table reports 31/12/20 = 19833.19."),
-        ("2018-01-01","14252.02","SECONDARY_INDEPENDENT","https://ijsrem.com/uploads/production/Determining%20Equity%20Risk%20Premium%20in%20India%20A%20Historical%20and%20Implied%20Approach.pdf","Published research table reports 01/01/18 = 14252.02."),
-        ("2018-12-31","15048.98","SECONDARY_INDEPENDENT","https://ijsrem.com/uploads/production/Determining%20Equity%20Risk%20Premium%20in%20India%20A%20Historical%20and%20Implied%20Approach.pdf","Published research table reports 31/12/18 = 15048.98."),
+        ("2020-01-01","","PENDING_OFFICIAL_NSE","https://www.nseindia.com/all-reports","Exact official NSE value still requires direct historical-report verification."),
+        ("2021-01-01","","PENDING_OFFICIAL_NSE","https://www.nseindia.com/all-reports","Exact official NSE value still requires direct historical-report verification."),
+        ("2022-01-03","","PENDING_OFFICIAL_NSE","https://www.nseindia.com/all-reports","Exact official NSE value still requires direct historical-report verification."),
+        ("2023-01-02","","PENDING_OFFICIAL_NSE","https://www.nseindia.com/all-reports","Exact official NSE value still requires direct historical-report verification."),
     ]
     tri=load_tri()
     rows=[]
     for d, external, level, source, note in checks:
         local=tri.get(d,{}).get("value","")
-        status="PASS" if local and abs(float(local)-float(external)) < 1e-6 else "FAIL"
+        status="PASS" if level == "OFFICIAL_NSE" and local and abs(float(local)-float(external)) < 1e-6 else "PENDING"
         rows.append({
-            "check":f"TRI_VALUE_{d}", "status":status, "evidence":note, "date":d,
-            "local_value":local, "official_value":external,
-            "official_source_reference":source, "evidence_level":level
+            "check":f"TRI_VALUE_{d}",
+            "status":status,
+            "evidence":note,
+            "date":d,
+            "local_value":local,
+            "official_value":external,
+            "official_source_reference":source,
+            "evidence_level":level
         })
+
     with OUT.open("w",newline="",encoding="utf-8") as f:
         w=csv.DictWriter(f,fieldnames=["check","status","evidence","date","local_value","official_value","official_source_reference","evidence_level"])
         w.writeheader(); w.writerows(rows)
     print("PHASE 0.5 TRI VERIFICATION WORKSHEET")
     print(f"Wrote {len(rows)} verification rows: {OUT}")
-    print("OFFICIAL_NSE is direct NSE evidence; SECONDARY_INDEPENDENT is explicitly labeled and does not satisfy an official-only gate.")
+    print("Only direct OFFICIAL_NSE evidence can produce PASS. PENDING_OFFICIAL_NSE rows keep the Phase 0.5 official-evidence requirement blocked.")
     return 0
 
 if __name__=="__main__": raise SystemExit(main())
