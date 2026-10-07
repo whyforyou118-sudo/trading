@@ -31,44 +31,38 @@ def trading_days(path: Path):
         if r.get("is_trading_day", "").lower() == "true"
     )
 
-def membership_intervals(baseline_path: Path, transitions_path: Path, events_path: Path, dates: list[dt.date]):
+def membership_intervals(baseline_path: Path, transitions_path: Path, events_path: Path):
     baseline = {r["symbol"]: r["isin"] for r in read(baseline_path)}
     transitions = read(transitions_path)
     events = read(events_path) if events_path.exists() else []
-    by_symbol = {s: [] for s in baseline}
-
     all_dates = sorted(set(
         [dt.date.fromisoformat(r["effective_date"]) for r in transitions]
         + [dt.date.fromisoformat(r["event_date"]) for r in events if r.get("apply_to_membership_state", "").lower() == "true"]
     ))
+    open_from = {s: dt.date(2017, 3, 31) for s in baseline}
     state = dict(baseline)
-    for i, d in enumerate(all_dates):
-        if d <= dt.date(2017, 3, 31):
-            continue
+    intervals = {}
+    for d in all_dates:
         for e in events:
-            if e.get("apply_to_membership_state", "").lower() == "true" and dt.date.fromisoformat(e["event_date"]) == d:
-                if e["symbol"] in state and state[e["symbol"]] == e["old_isin"]:
-                    state[e["symbol"]] = e["new_isin"]
+            if e.get("apply_to_membership_state", "").lower() != "true" or dt.date.fromisoformat(e["event_date"]) != d:
+                continue
+            if e["symbol"] in state and state[e["symbol"]] == e["old_isin"]:
+                state[e["symbol"]] = e["new_isin"]
         for r in transitions:
             if dt.date.fromisoformat(r["effective_date"]) != d:
                 continue
+            symbol = r["symbol"]
             if r["action"] == "INCLUSION":
-                state[r["symbol"]] = r["isin"]
+                state[symbol] = r["isin"]
+                open_from[symbol] = d
             elif r["action"] == "EXCLUSION":
-                state.pop(r["symbol"], None)
-
-        next_date = all_dates[i + 1] if i + 1 < len(all_dates) else None
-        available_to = (next_date - dt.timedelta(days=1)) if next_date else None
-        for symbol in state:
-            by_symbol.setdefault(symbol, []).append((d, available_to, state[symbol]))
-    return by_symbol
-
-def quarter_ends(days: list[dt.date], start: dt.date, end: dt.date):
-    return [d for d in days if start <= d <= end and d.month in (3, 6, 9, 12) and (d + dt.timedelta(days=1)).month != d.month]
-
-def previous_month_end(days: list[dt.date], d: dt.date):
-    candidates = [x for x in days if x < d and (x.year, x.month) != (d.year, d.month)]
-    return max(candidates)
+                if symbol in state:
+                    intervals.setdefault(symbol, []).append((open_from[symbol], d - dt.timedelta(days=1), state[symbol]))
+                    state.pop(symbol)
+                    open_from.pop(symbol, None)
+    for symbol, isin in state.items():
+        intervals.setdefault(symbol, []).append((open_from[symbol], None, isin))
+    return intervals
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Build Phase 1A PIT decision table.")
@@ -86,7 +80,7 @@ def main() -> int:
 
     rows = read(args.top5)
     days = trading_days(args.calendar)
-    intervals = membership_intervals(args.baseline, args.membership, args.events, days)
+    intervals = membership_intervals(args.baseline, args.membership, args.events)
     out = []
 
     for r in rows:
