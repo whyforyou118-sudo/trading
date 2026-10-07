@@ -284,8 +284,8 @@
   },
   "preflight_rules": {
     "retained_name_rebalancing": "DIRECT_TARGET_RESIZE",
-    "retained_name_definition": "If a currently held security remains in the new Top-5, resize its position directly toward its frozen 20% target using whole shares; do not liquidate and repurchase solely because it was retained.",
-    "target_definition": "Target is 20% of portfolio NAV at the rebalance decision/execution basis defined by the implementation.",
+    "retained_name_definition": "If a currently held security remains in the new Top-5, resize directly toward its computed 20% target share count using whole shares; do not liquidate and repurchase solely because it was retained.",
+    "target_definition": "At each rebalance, compute pre-trade portfolio NAV at the next execution open using raw-unadjusted opens for all currently held securities plus cash. Each selected name has a 20% target notional of that pre-trade NAV; target shares are floor(target_notional / that name's raw-unadjusted execution open).",
     "tie_break": "MOMENTUM_DESCENDING_THEN_SYMBOL_ASCENDING",
     "nan_signal": "EXCLUDE_FROM_RANKING",
     "missing_signal_price": "EXCLUDE_FROM_RANKING_AND_RECORD",
