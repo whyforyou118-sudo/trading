@@ -35,6 +35,25 @@ implementation must separately specify whether the investor is assumed to
 subscribe, renounce, or let the entitlement lapse. The frozen V6 portfolio
 must not receive a free synthetic subscription unless explicitly modeled.
 
+### 3.1 Frozen Phase 1A portfolio treatment: renounce at first tradable open
+
+For the exact ₹25K whole-share implementation, the portfolio-side rights policy is:
+RE_RENOUNCE_AT_FIRST_TRADABLE_OPEN.
+
+- Eligibility is path-conditional: only parent shares actually held at the record-date entitlement point create REs.
+- Entitlement quantity is the issuer-defined integer entitlement; fractional entitlements are ignored. No synthetic additional-share application is modeled.
+- The portfolio does not subscribe to the rights issue. This avoids an unapproved capital call and, for partly-paid rights, avoids future call obligations.
+- The RE is sold/renounced on the first actual RE trading session at that session's official open.
+- The frozen 0.10% slippage assumption applies to the RE sale.
+- RE sale costs use the applicable historical RE rules: NSE cash-market transaction charges, RE-specific STT, applicable SEBI fee/GST, and the verified Zerodha delivery-cost framework where applicable. Seller-side stamp duty is zero.
+- If the first tradable open, entitlement quantity, applicable costs, or instrument identity is unavailable, the path fails closed.
+- The treatment is deterministic and does not use later RE prices, issue-subscription outcomes, or future calls.
+
+Verified event terms:
+- GRASIM: 6:179; record date 2024-01-10; fractional entitlements ignored; RE GRASIM-RE.
+- TATACONSUM: 1:26; record date 2024-07-27; fractional entitlements ignored; RE TATACON-RE.
+- ADANIENT: 3:25; record date 2025-11-17; fractional entitlements ignored; RE ADANI-RE. The issue was partly paid, but renunciation means no future call is incurred by the model.
+
 ## 4. Britannia bonus-debenture scheme
 
 The Britannia scheme records are NOT equity bonus events. The scheme issued
