@@ -20,6 +20,7 @@ BASELINE=ROOT/"data/reference/nifty50_baseline.csv"
 TRANSITIONS=ROOT/"data/reference/nifty50_membership.csv"
 EVENTS=ROOT/"data/reference/security_identity_events.csv"
 OUT=ROOT/"audits/phase05_top5_feasibility.csv"
+AUDIT=ROOT/"audits/phase05_top5_coverage.csv"
 
 def read(path):
     with path.open("r",encoding="utf-8-sig",newline="") as f:return list(csv.DictReader(f))
@@ -94,13 +95,16 @@ def main():
         cache[key]=parse_file(path); return cache[key]
 
     out=[]
+    coverage=[]
     for signal in signals:
         prev_month=(signal.year,signal.month-1) if signal.month>1 else (signal.year-1,12)
         old_year=signal.year; old_month=signal.month-13
         while old_month<=0: old_month+=12; old_year-=1
         end_price_date=md[prev_month]; start_price_date=md[(old_year,old_month)]
         next_dates=[d for d in dates if d>signal]
-        if not next_dates: continue
+        if not next_dates:
+            coverage.append({"rebalance_date":signal.isoformat(),"execution_date":"","candidate_count":0,"selected_count":0,"status":"BLOCKED","reason":"NO_NEXT_TRADING_DAY"})
+            continue
         exec_date=next_dates[0]
         p_end=prices(end_price_date); p_start=prices(start_price_date); p_exec=prices(exec_date)
         state=apply_state(baseline,transitions,events,signal)
@@ -111,8 +115,10 @@ def main():
             if a<=0 or b<=0: continue
             scores.append((a/b-1.0,symbol))
         scores.sort(reverse=True)
+        selected=0
         for rank,(score,symbol) in enumerate(scores[:int(cfg["primary_holdings"])],1):
             if symbol not in p_exec: continue
+            selected += 1
             out.append({
                 "rebalance_date":signal.isoformat(),"execution_date":exec_date.isoformat(),
                 "rank":rank,"symbol":symbol,"momentum_raw_unadjusted":score,
@@ -121,10 +127,18 @@ def main():
     if not out: raise SystemExit("BLOCKED: no Top-5 feasibility rows produced")
     with OUT.open("w",newline="",encoding="utf-8") as f:
         w=csv.DictWriter(f,fieldnames=out[0].keys()); w.writeheader(); w.writerows(out)
+    with AUDIT.open("w",newline="",encoding="utf-8") as f:
+        w=csv.DictWriter(f,fieldnames=coverage[0].keys()); w.writeheader(); w.writerows(coverage)
     print("PHASE 0.5 TOP-5 FEASIBILITY INPUT")
     print(f"Rebalance dates: {len(set(r['rebalance_date'] for r in out))}")
     print(f"Rows: {len(out)}")
+    print(f"Expected rebalance dates: {len(signals)}")
+    print(f"PASS rebalance dates: {sum(x['status']=='PASS' for x in coverage)}")
+    print(f"BLOCKED rebalance dates: {sum(x['status']=='BLOCKED' for x in coverage)}")
+    for x in coverage:
+        if x["status"]=="BLOCKED": print(f"BLOCKED {x['rebalance_date']}: {x['reason']}")
     print(f"Artifact: {OUT}")
+    print(f"Coverage audit: {AUDIT}")
     print("WARNING: raw-unadjusted ranking is for affordability feasibility only; do not use it for performance results.")
     return 0
 
