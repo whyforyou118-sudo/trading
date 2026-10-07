@@ -64,6 +64,8 @@ def main() -> int:
 
     missing = sorted(expected_set - unique_set)
     extras = sorted(unique_set - expected_set)
+    known_weekend_extra = sorted(d for d in extras if date.fromisoformat(d).weekday() >= 5)
+    other_extra = sorted(set(extras) - set(known_weekend_extra))
     # Some historical index series include Saturday observations even when
     # the exchange was closed. Keep these visible as anomalies; they must not
     # be silently discarded or counted as trading sessions.
@@ -91,6 +93,8 @@ def main() -> int:
         ("EXTRA_NONTRADING_DATES", len(extras), 0, "PASS" if not extras else "FAIL"),
         ("WEEKEND_EXTRA_DATES", len(known_weekend_extra), 0, "INFO" if known_weekend_extra else "PASS"),
         ("OTHER_EXTRA_DATES", len(other_extra), 0, "PASS" if not other_extra else "FAIL"),
+        ("WEEKEND_EXTRA_DATES", len(known_weekend_extra), 0, "INFO" if known_weekend_extra else "PASS"),
+        ("OTHER_EXTRA_DATES", len(other_extra), 0, "PASS" if not other_extra else "FAIL"),
         ("DUPLICATE_TRI_DATES", len(duplicates), 0, "PASS" if not duplicates else "FAIL"),
         ("INVALID_TRI_ROWS", len(bad_rows), 0, "PASS" if not bad_rows else "FAIL"),
     ]
@@ -107,6 +111,10 @@ def main() -> int:
                 detail = ";".join(missing)
             elif check == "EXTRA_NONTRADING_DATES":
                 detail = ";".join(extras)
+            elif check == "WEEKEND_EXTRA_DATES":
+                detail = ";".join(known_weekend_extra)
+            elif check == "OTHER_EXTRA_DATES":
+                detail = ";".join(other_extra)
             elif check == "WEEKEND_EXTRA_DATES":
                 detail = ";".join(known_weekend_extra)
             elif check == "OTHER_EXTRA_DATES":
@@ -144,6 +152,8 @@ def main() -> int:
         "invalid_rows": bad_rows,
         "known_weekend_extra_dates": known_weekend_extra,
         "other_extra_dates": other_extra,
+        "known_weekend_extra_dates": known_weekend_extra,
+        "other_extra_dates": other_extra,
     }
     SUMMARY.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 
@@ -156,6 +166,10 @@ def main() -> int:
         print("Extra dates:", ", ".join(extras))
     if duplicates:
         print("Duplicate dates:", ", ".join(duplicates))
+    if known_weekend_extra:
+        print("Weekend index observations (not exchange sessions):", ", ".join(known_weekend_extra))
+    if other_extra:
+        print("Other extra dates:", ", ".join(other_extra))
     print(f"TRI SHA256: {summary['tri_sha256']}")
     print(f"Overall: {overall}")
     print(f"Artifact: {OUT}")
