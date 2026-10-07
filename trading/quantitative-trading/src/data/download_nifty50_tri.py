@@ -74,6 +74,7 @@ def main():
     args=ap.parse_args()
     start,end=datetime.date.fromisoformat(args.start),datetime.date.fromisoformat(args.end)
     if end<start: raise SystemExit("end must be >= start")
+    session=make_session()
     all_rows={}
     cur=start
     while cur<=end:
