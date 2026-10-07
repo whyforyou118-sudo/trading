@@ -63,8 +63,8 @@ def scenario(row,capital,holdings=5,rebalances=4,slippage=0.001,stamp_pct_overri
     sebi=annual_turnover/1e7*float(row["sebi_per_crore"])
     stamp_rate=pct(row,"stamp_buy_pct") if stamp_pct_override is None else float(stamp_pct_override)
     stamp=buy*stamp_rate
-    gst=(brokerage+transaction+sebi+dp)*pct(row,"gst_pct")
     dp=holdings*rebalances*float(row["dp_per_scrip"])
+    gst=(brokerage+transaction+sebi+dp)*pct(row,"gst_pct")
     slip=annual_turnover*slippage
     total=brokerage+stt+transaction+sebi+stamp+gst+dp+slip
     return {
