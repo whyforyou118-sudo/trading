@@ -184,8 +184,14 @@ def main():
         w=csv.DictWriter(f,fieldnames=out[0].keys()); w.writeheader(); w.writerows(out)
 
     periods=sorted(set(x["signal_date"] for x in out))
-    ics=[float(x["rank_ic"]) for x in { (r["signal_date"],r["rank_ic"]) for r in out }]
-    spreads=[float(x["top_decile_minus_bottom_decile"]) for x in { (r["signal_date"],r["top_decile_minus_bottom_decile"]) for r in out }]
+    period_stats={}
+    for r in out:
+        period_stats[r["signal_date"]] = {
+            "rank_ic": float(r["rank_ic"]),
+            "spread": float(r["top_decile_minus_bottom_decile"]),
+        }
+    ics=[v["rank_ic"] for _,v in sorted(period_stats.items())]
+    spreads=[v["spread"] for _,v in sorted(period_stats.items())]
     summary=[{
         "development_signal_periods":len(periods),
         "development_start":min(periods),
