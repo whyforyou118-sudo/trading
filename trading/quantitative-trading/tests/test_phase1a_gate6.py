@@ -1,9 +1,12 @@
 from pathlib import Path
 import sys
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from audit.phase1a_gate6_benchmark_cost import coverage_check
+from data.download_nifty50_equal_weight_tri import INDEX_NAME
+
 
 def test_cost_schedule_covers_frozen_period_without_gaps():
     rows = [
@@ -13,3 +16,7 @@ def test_cost_schedule_covers_frozen_period_without_gaps():
     intervals, failures = coverage_check(rows)
     assert len(intervals) == 2
     assert failures == []
+
+
+def test_equal_weight_benchmark_uses_official_index_name():
+    assert INDEX_NAME == "Nifty50 Equal Weight"
