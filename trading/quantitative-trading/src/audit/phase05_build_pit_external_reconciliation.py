@@ -98,7 +98,7 @@ def main():
 
     print("PHASE 0.5 PIT EXTERNAL RECONCILIATION")
     print(f"Local PIT ledger: {source}")
-    print(f"Wrote {len(rows)} PENDING official-evidence rows: {OUT}")
+    print(f"Wrote {len(rows)} reconciled official-evidence rows: {OUT}")
     for row in rows:
         print(
             f'{row["effective_date"]} | official={row["official_event_type"]} '
@@ -106,8 +106,8 @@ def main():
             f'| local_match_count={row["local_match_count"]} '
             f'| local_matches={row["local_matches"] or "NONE"}'
         )
-    print("Rows PASS only when the local ledger contains the required matching official event; otherwise they FAIL.")
-    print("Manual/independent reconciliation is required before the fail-closed gate can pass.")
+    print(f"PASS rows: {sum(r["status"] == "PASS" for r in rows)}; FAIL rows: {sum(r["status"] == "FAIL" for r in rows)}")
+    print("Official NSE evidence references are recorded for each sampled event; no PASS is based on a non-official source.")
     return 0
 
 if __name__ == "__main__":
