@@ -64,6 +64,15 @@ def membership_intervals(baseline_path: Path, transitions_path: Path, events_pat
         intervals.setdefault(symbol, []).append((open_from[symbol], None, isin))
     return intervals
 
+def previous_month_end(days: list[dt.date], decision: dt.date) -> dt.date:
+    candidates = [
+        d for d in days
+        if d < decision and (d.year, d.month) != (decision.year, decision.month)
+    ]
+    if not candidates:
+        raise SystemExit(f"BLOCKED: no prior month-end trading date for {decision}")
+    return max(candidates)
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Build Phase 1A PIT decision table.")
     ap.add_argument("--top5", type=Path, default=ROOT / "audits/phase05_top5_feasibility.csv")
