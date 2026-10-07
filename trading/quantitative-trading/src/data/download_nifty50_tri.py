@@ -11,7 +11,7 @@ OUT=ROOT/"data/reference/nifty50_tri.csv"
 URL="https://www.niftyindices.com/Backpage.aspx/getTotalReturnIndexString"
 FIELDS=["date","value","source","source_reference"]
 
-TRI_URL="https://www.niftyindices.com/Backpage.aspx/getTotalReturnIndexString"
+TRI_URL="https://www.niftyindices.com/Backpage/getTotalReturnIndexString"
 TRI_REFERER="https://www.niftyindices.com/reports/historical-data"
 TRI_UA=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36")
@@ -37,12 +37,13 @@ def make_session():
 def request_chunk(session,start,end):
     # The ASP.NET endpoint expects cinfo as a JSON-like string with
     # single-quoted fields, not a nested JSON object.
-    cinfo=("{'name':'NIFTY 50',"
-           f"'startDate':'{start:%d-%b-%Y}',"
-           f"'endDate':'{end:%d-%b-%Y}',"
-           "'indexName':'NIFTY 50'}")
-    payload={"cinfo":cinfo}
-    data=json.dumps(payload).encode()
+    parameters={
+        "name":"NIFTY 50",
+        "startDate":start.strftime("%d-%b-%Y"),
+        "endDate":end.strftime("%d-%b-%Y"),
+        "indexName":"NIFTY 50",
+    }
+    payload={"cinfo":json.dumps(parameters)}
     r=session.post(TRI_URL,content=json.dumps(payload))
     if r.status_code != 200:
         raise RuntimeError(f"Nifty Indices TRI HTTP {r.status_code}: {r.text[:500]!r}")
