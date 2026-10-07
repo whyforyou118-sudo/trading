@@ -1,0 +1,57 @@
+from pathlib import Path
+import sys
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from portfolio.accounting import (
+    CostBreakdown, Dividend, PortfolioState, ShareRatioAction, Trade, apply_ledger,
+    reconcile_cash,
+)
+
+def test_cash_positions_and_costs_reconcile():
+    p = PortfolioState(cash=10_000.0)
+    c = CostBreakdown(brokerage=1.0, stt=2.0, gst=0.54)
+    p.apply_trade(Trade("2025-01-01", "AAA", "BUY", 10, 100.0, c))
+    assert p.shares("AAA") == 10
+    assert abs(p.cash - (10_000 - 1_000 - c.total)) < 1e-9
+
+def test_dividend_and_split_preserve_economic_value():
+    p = PortfolioState(cash=0.0, positions={"AAA": 10})
+    before = p.market_value({"AAA": 100.0})
+    p.apply_dividend(Dividend("2025-01-02", "AAA", 5.0))
+    p.apply_share_ratio(ShareRatioAction("2025-01-03", "AAA", 2, 1))
+    after = p.market_value({"AAA": 50.0})
+    assert abs(after - (before + 50.0)) < 1e-9
+
+def test_complete_ledger_uses_event_date_shares():
+    trades = [
+        Trade("2025-01-01", "AAA", "BUY", 10, 100.0),
+        Trade("2025-01-04", "AAA", "SELL", 4, 110.0),
+    ]
+    dividends = [Dividend("2025-01-03", "AAA", 5.0)]
+    assert abs(reconcile_cash(1000.0, trades, dividends) - 850.0) < 1e-9
+
+def test_split_then_trade_is_replayed_in_date_order():
+    events = [
+        Trade("2025-01-04", "AAA", "SELL", 20, 50.0),
+        ShareRatioAction("2025-01-02", "AAA", 2, 1),
+        Trade("2025-01-01", "AAA", "BUY", 10, 100.0),
+    ]
+    state = apply_ledger(0.0, events)
+    assert state.shares("AAA") == 0
+    assert abs(state.cash - 1000.0) < 1e-9
+
+def test_oversell_and_fractional_shares_fail_closed():
+    p = PortfolioState(cash=0.0, positions={"AAA": 5})
+    try:
+        p.apply_trade(Trade("2025-01-04", "AAA", "SELL", 6, 100.0))
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("oversell must fail")
+    try:
+        Trade("2025-01-04", "AAA", "BUY", 1.5, 100.0)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("fractional shares must fail")
