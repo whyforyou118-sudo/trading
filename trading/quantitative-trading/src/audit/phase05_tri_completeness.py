@@ -64,6 +64,13 @@ def main() -> int:
 
     missing = sorted(expected_set - unique_set)
     extras = sorted(unique_set - expected_set)
+    # Some historical index series include Saturday observations even when
+    # the exchange was closed. Keep these visible as anomalies; they must not
+    # be silently discarded or counted as trading sessions.
+    known_weekend_extra = sorted(
+        d for d in extras if date.fromisoformat(d).weekday() >= 5
+    )
+    other_extra = sorted(set(extras) - set(known_weekend_extra))
     duplicates = sorted(d for d, n in counts.items() if n > 1)
 
     bad_rows = []
@@ -82,6 +89,8 @@ def main() -> int:
         ("UNIQUE_TRI_DATE_COUNT", len(unique), len(unique), "PASS" if len(unique) == len(rows) else "FAIL"),
         ("MISSING_EXPECTED_TRADING_DATES", len(missing), 0, "PASS" if not missing else "FAIL"),
         ("EXTRA_NONTRADING_DATES", len(extras), 0, "PASS" if not extras else "FAIL"),
+        ("WEEKEND_EXTRA_DATES", len(known_weekend_extra), 0, "INFO" if known_weekend_extra else "PASS"),
+        ("OTHER_EXTRA_DATES", len(other_extra), 0, "PASS" if not other_extra else "FAIL"),
         ("DUPLICATE_TRI_DATES", len(duplicates), 0, "PASS" if not duplicates else "FAIL"),
         ("INVALID_TRI_ROWS", len(bad_rows), 0, "PASS" if not bad_rows else "FAIL"),
     ]
@@ -98,6 +107,10 @@ def main() -> int:
                 detail = ";".join(missing)
             elif check == "EXTRA_NONTRADING_DATES":
                 detail = ";".join(extras)
+            elif check == "WEEKEND_EXTRA_DATES":
+                detail = ";".join(known_weekend_extra)
+            elif check == "OTHER_EXTRA_DATES":
+                detail = ";".join(other_extra)
             elif check == "DUPLICATE_TRI_DATES":
                 detail = ";".join(duplicates)
             elif check == "INVALID_TRI_ROWS":
@@ -129,6 +142,8 @@ def main() -> int:
         "extra_dates": extras,
         "duplicate_dates": duplicates,
         "invalid_rows": bad_rows,
+        "known_weekend_extra_dates": known_weekend_extra,
+        "other_extra_dates": other_extra,
     }
     SUMMARY.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 
