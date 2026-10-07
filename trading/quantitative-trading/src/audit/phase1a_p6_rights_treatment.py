@@ -66,9 +66,31 @@ def main() -> int:
         )
 
     print()
-    print("SIGNAL TREATMENT: RESOLVED — use the verified NSE rights adjustment factor.")
-    print("PORTFOLIO TREATMENT: BLOCKED — exact ₹25K RE subscription/renunciation policy remains required.")
-    print("STATUS: BLOCKED — P6 cannot PASS until portfolio RE treatment is explicitly implemented and tested.")
+    print("P6 RIGHTS PORTFOLIO DIAGNOSTIC")
+    print("=" * 72)
+    requirements = (
+        ("signal_factor", "PASS", "Verified NSE rights adjustment factor is available."),
+        ("re_price_data", "PASS", "Official NSE RE historical rows are archived for all three events."),
+        ("re_first_tradable_open", "PASS", "First tradable session/open is identified from archived NSE rows."),
+        ("entitlement_rule", "BLOCKED", "No production rule calculates integer RE entitlement from parent shares."),
+        ("fractional_entitlement_rule", "BLOCKED", "No issuer-specific fractional-entitlement treatment is implemented."),
+        ("portfolio_policy", "BLOCKED", "Subscribe/renounce/lapse policy is not frozen for the exact ₹25K estimand."),
+        ("re_transaction_costs", "BLOCKED", "Applicable RE transaction costs are not yet validated and implemented."),
+        ("ledger_integration", "BLOCKED", "The accounting ledger has no Rights Entitlement event or RE sale path."),
+        ("path_conditional_test", "BLOCKED", "No test proves treatment applies only when parent shares were actually held."),
+    )
+
+    blocked = 0
+    for event in EVENTS:
+        print(f"{event.symbol} | ex_date={event.ex_date.isoformat()} | record_date={event.record_date.isoformat()}")
+        for name, status, detail in requirements:
+            print(f"  {status:<7} {name:<28} {detail}")
+            blocked += status == "BLOCKED"
+        print()
+
+    print("SIGNAL TREATMENT: PASS — verified NSE rights adjustment factors are available.")
+    print(f"PORTFOLIO TREATMENT: BLOCKED — {blocked} unmet requirement checks across {len(EVENTS)} events.")
+    print("STATUS: BLOCKED — no performance run is authorized until portfolio-side rights treatment is implemented and tested.")
     return 2
 
 
