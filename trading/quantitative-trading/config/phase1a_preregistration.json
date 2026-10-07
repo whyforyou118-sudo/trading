@@ -1,0 +1,169 @@
+{
+  "version": "phase1a-v1",
+  "frozen_primary": {
+    "universe": "NIFTY_50_PIT",
+    "formation_months": 12,
+    "skip_months": 1,
+    "holdings": 5,
+    "rebalance": "quarterly",
+    "capital_rs": 25000,
+    "execution": "next_actual_trading_day_open",
+    "price_mode": "RAW_UNADJUSTED",
+    "slippage_pct": 0.1,
+    "cost_model": "ZERODHA_DATE_EFFECTIVE"
+  },
+  "decision_dates": {
+    "research_start": "2018-01-01",
+    "research_end": "2025-12-31",
+    "development_end": "2022-12-31",
+    "protected_discipline_holdout_start": "2023-01-01",
+    "protected_discipline_holdout_end": "2025-12-31"
+  },
+  "preregistered_variants": [
+    {
+      "id": "V1_PRIMARY",
+      "formation_months": 12,
+      "skip_months": 1,
+      "holdings": 5,
+      "rebalance": "quarterly"
+    },
+    {
+      "id": "V2_6_1_5_Q",
+      "formation_months": 6,
+      "skip_months": 1,
+      "holdings": 5,
+      "rebalance": "quarterly"
+    },
+    {
+      "id": "V3_9_1_5_Q",
+      "formation_months": 9,
+      "skip_months": 1,
+      "holdings": 5,
+      "rebalance": "quarterly"
+    },
+    {
+      "id": "V4_12_0_5_Q",
+      "formation_months": 12,
+      "skip_months": 0,
+      "holdings": 5,
+      "rebalance": "quarterly"
+    },
+    {
+      "id": "V5_12_1_3_Q",
+      "formation_months": 12,
+      "skip_months": 1,
+      "holdings": 3,
+      "rebalance": "quarterly"
+    },
+    {
+      "id": "V6_12_1_10_Q",
+      "formation_months": 12,
+      "skip_months": 1,
+      "holdings": 10,
+      "rebalance": "quarterly"
+    },
+    {
+      "id": "V7_12_1_5_M",
+      "formation_months": 12,
+      "skip_months": 1,
+      "holdings": 5,
+      "rebalance": "monthly"
+    }
+  ],
+  "benchmarks": [
+    "NIFTY_50_TRI",
+    "NIFTY_50_PRICE_INDEX",
+    "CASH_0_PCT",
+    "EXPOSURE_MATCHED_NIFTY_50_TRI_PLUS_CASH",
+    "NIFTY_50_EQUAL_WEIGHT_SECONDARY"
+  ],
+  "exposure_matched_benchmark": {
+    "formula": "R_EM_t = w_t * R_NIFTY50_TRI_t + (1-w_t) * R_CASH_t",
+    "cash_return_assumption_pct": 0,
+    "purpose": "Separate stock-selection/implementation performance from residual-cash exposure."
+  },
+  "cross_sectional_tests": {
+    "rank_ic": true,
+    "top_decile_minus_bottom_decile": true,
+    "top5_vs_random5_permutation": true,
+    "random_selection_universe": "same PIT-eligible universe on each decision date",
+    "random_selection_size": 5,
+    "random_selection_without_replacement": true,
+    "random_seed": 20261007,
+    "monte_carlo_repetitions": 100000,
+    "alpha": 0.05
+  },
+  "portfolio_inference": {
+    "primary_bootstrap": "stationary_or_block_bootstrap",
+    "confidence_level": 0.95,
+    "resample_unit": "complete portfolio return interval",
+    "iid_gaussian_only": "NOT_PRIMARY",
+    "secondary_diagnostics": [
+      "DSR",
+      "WHITE_REALITY_CHECK",
+      "HANSEN_SPA"
+    ]
+  },
+  "classification": {
+    "robust_evidence": {
+      "primary_excess_return_gt_zero": true,
+      "bootstrap_ci_excludes_zero_positive": true,
+      "holdout_cumulative_excess_return_gte_zero": true,
+      "positive_variants_min": 5,
+      "permutation_p_max": 0.05
+    },
+    "moderate_evidence": {
+      "primary_excess_return_gt_zero": true,
+      "positive_variants_min": 4,
+      "requires_no_data_or_accounting_invariant_failure": true
+    },
+    "weak_fragile": "Positive primary result that fails the moderate criteria or materially depends on one implementation/cost assumption; cross-sectional and portfolio evidence may disagree.",
+    "failure": {
+      "primary_excess_return_lte_zero": true,
+      "non_positive_variants_min": 5,
+      "permutation_p_min": 0.05
+    },
+    "inconclusive": "Any case not meeting the definitions above, including unresolved data/accounting defects or evidence too weak to distinguish the observed result from noise."
+  },
+  "invalidity_rules": [
+    "Required PIT membership cannot be reconstructed.",
+    "Raw-price/dividend invariant fails.",
+    "Corporate-action accounting has an unexplained share/cash discontinuity.",
+    "Transaction ledger cannot reconcile holdings, cash, and NAV.",
+    "Execution uses a price unavailable at the decision timestamp.",
+    "Protected holdout influenced a pre-classification strategy/configuration decision.",
+    "Configuration cannot be reproduced from its recorded hash and Git commit."
+  ],
+  "capital_scenarios_rs": [
+    20000,
+    25000,
+    50000,
+    100000,
+    500000,
+    1000000
+  ],
+  "primary_unbuyable_policy": "NO_REPLACEMENT_RETAIN_CASH",
+  "break_even_reporting": [
+    "transaction_cost_break_even",
+    "capital_constrained_economic_break_even"
+  ],
+  "data_artifacts_required": [
+    "implementation_unit_test_report",
+    "integer_share_residual_cash_report",
+    "transaction_level_cost_report",
+    "dividend_accounting_invariant_report",
+    "corporate_action_accounting_test_report",
+    "pit_consistency_report",
+    "development_rank_ic_and_decile_spread_report",
+    "dependence_aware_statistical_report",
+    "experiment_registry",
+    "protected_holdout_configuration_hash"
+  ],
+  "reproducibility": {
+    "config_hash_required": true,
+    "data_hashes_required": true,
+    "random_seeds_required": true,
+    "git_commit_sha_required": true,
+    "freeze_before_performance_run": true
+  }
+}
