@@ -61,9 +61,29 @@ def request_chunk(session,start,end):
         raise RuntimeError(
             f"Nifty Indices TRI returned invalid JSON: {raw[:500]!r}"
         ) from exc
-    raw=obj.get("d",obj)
-    if isinstance(raw,str): raw=json.loads(raw)
-    if not isinstance(raw,list): raise RuntimeError(f"Unexpected TRI response: {type(raw)}")
+    # Nifty has returned both a wrapper object and a bare JSON list.
+    # Normalize the root before iterating records.
+    if isinstance(obj, dict):
+        raw=obj.get("d",obj)
+    elif isinstance(obj, list):
+        raw=obj
+    else:
+        raise RuntimeError(
+            f"Unexpected TRI JSON root: {type(obj).__name__}: {str(obj)[:500]!r}"
+        )
+
+    if isinstance(raw,str):
+        try:
+            raw=json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                f"Nifty TRI field 'd' is not valid JSON: {raw[:500]!r}"
+            ) from exc
+
+    if not isinstance(raw,list):
+        raise RuntimeError(
+            f"Unexpected TRI record payload: {type(raw).__name__}: {str(raw)[:500]!r}"
+        )
     rows=[]
     for x in raw:
         ds=x.get("Date") or x.get("HistoricalDate")
