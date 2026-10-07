@@ -209,3 +209,39 @@ Before performance interpretation, produce:
 10. protected-holdout configuration hash.
 
 No result-driven changes to the frozen primary strategy are permitted.
+
+
+## 17. ₹25,000 capital-constrained implementation evidence
+
+The deterministic Phase 0.5 reconstruction uses the actual 155-row Top-5 feasibility artifact and the frozen equal-target/whole-share/no-replacement rules.
+
+Results across 31 executable rebalances:
+
+| Capital | Unbuyable rebalances | Unbuyable slots | Mean cash | Median cash | Max cash | Mean invested | Mean abs. weight deviation |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| ₹20,000 | 21/31 (67.74%) | 26 | 26.43% | 26.66% | 52.79% | 73.57% | 5.29% |
+| ₹25,000 | 19/31 (61.29%) | 22 | 24.91% | 25.82% | 56.85% | 75.09% | 4.98% |
+| ₹50,000 | 7/31 (22.58%) | 7 | 13.05% | 10.74% | 30.11% | 86.95% | 2.61% |
+| ₹100,000 | 0/31 | 0 | 5.34% | 4.94% | 12.56% | 94.66% | 1.07% |
+| ₹500,000 | 0/31 | 0 | 1.17% | 0.90% | 3.46% | 98.83% | 0.23% |
+| ₹1,000,000 | 0/31 | 0 | 0.55% | 0.39% | 1.62% | 99.45% | 0.11% |
+
+Artifact:
+
+`audits/phase05_retail_friction_report.csv`
+
+These are deterministic implementation-feasibility results, not strategy performance results.
+
+### Capital/price-level constraint disclosure
+
+At ₹25,000, whole-share execution can cause a selected high-price constituent to receive zero shares. The primary rule does not replace that constituent with a lower-ranked stock. The intended allocation remains cash.
+
+Therefore the ₹25,000 implementation is not economically equivalent to an unconstrained equal-weight Top-5 portfolio. It contains a real capital/price-level implementation constraint that can interact with security selection.
+
+This is an intended consequence of the frozen retail implementation, not a reason to alter the primary strategy after observing results.
+
+### Cost interpretation
+
+The Phase 0.5 conservative ₹25,000 cost scenario is 2.97% modeled drag under a full-liquidation/rebuild assumption. It is not realized strategy turnover and is not itself the strategy's final break-even return.
+
+Phase 1 must calculate actual transaction-level turnover and realized cost drag. Residual cash must be treated separately from transaction costs because cash is an exposure/opportunity-cost effect, not a transaction charge.
