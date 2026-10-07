@@ -245,3 +245,141 @@ This is an intended consequence of the frozen retail implementation, not a reaso
 The Phase 0.5 conservative ₹25,000 cost scenario is 2.97% modeled drag under a full-liquidation/rebuild assumption. It is not realized strategy turnover and is not itself the strategy's final break-even return.
 
 Phase 1 must calculate actual transaction-level turnover and realized cost drag. Residual cash must be treated separately from transaction costs because cash is an exposure/opportunity-cost effect, not a transaction charge.
+
+## 18. Phase 1A preregistered inference and classification rules
+
+The following rules are frozen before any Phase 1 performance result is inspected. They are classification rules, not optimization targets.
+
+### 18.1 Primary performance question
+
+The primary portfolio question is:
+
+> Does the frozen ₹25,000, PIT NIFTY 50, 12M/1M, Top-5, quarterly strategy produce positive economically meaningful excess return versus the NIFTY 50 TRI after transaction costs, slippage, dividends, integer-share execution, and residual cash?
+
+The primary comparison is against NIFTY 50 TRI. The NIFTY 50 Price Index, cash, and exposure-matched NIFTY 50 + cash remain secondary benchmarks.
+
+### 18.2 Exposure-matched benchmark
+
+For each portfolio valuation interval, let (w_t) be the strategy's invested-equity weight and (1-w_t) its cash weight.
+
+The exposure-matched benchmark return is:
+
+`R^{EM}_t = w_t R^{TRI}_t + (1-w_t)R^{cash}_t`
+
+The primary cash return assumption is 0% unless a separately preregistered cash-rate experiment is run. The benchmark therefore isolates stock-selection/implementation performance from the mechanical effect of holding less than 100% equity exposure.
+
+A separate equal-weight NIFTY 50 benchmark is added as a secondary diagnostic and does not replace NIFTY 50 TRI.
+
+### 18.3 Cross-sectional information question
+
+The panel question is separate from the portfolio question:
+
+> Does the frozen 12M/1M momentum ranking contain cross-sectional information about subsequent returns within the PIT NIFTY 50 universe?
+
+Required statistics:
+
+- date-by-date Rank IC between momentum score and subsequent forward return;
+- top-decile minus bottom-decile spread where the eligible cross-section supports the deciles;
+- date-stratified permutation test for the Top-5 mean forward return;
+- random-5-stock null distribution using the same eligible PIT universe, date, holding horizon, and portfolio size.
+
+The panel/permutation evidence cannot be used to relabel a negative implementable portfolio result as profitable alpha.
+
+### 18.4 Permutation test
+
+For each eligible decision date, retain the exact PIT-eligible universe and forward-return horizon. Under the null, randomly select five eligible securities without replacement and calculate the same equal-target, unconstrained signal-return statistic used by the cross-sectional test.
+
+Repeat with a fixed preregistered seed and sufficient repetitions to make the Monte Carlo standard error negligible relative to the p-value decision. The observed Top-5 statistic is compared with the pooled date-stratified null distribution.
+
+The permutation procedure must not use future membership information, and it must not replace the actual portfolio implementation test.
+
+### 18.5 Dependence-aware portfolio inference
+
+Portfolio-return inference must use a dependence-aware resampling method rather than relying only on iid Gaussian assumptions.
+
+Primary method:
+
+- stationary/block bootstrap over the realized portfolio-return sequence;
+- resample complete return intervals, not individual stock observations;
+- preserve the chronological return structure within each sampled block;
+- report the bootstrap distribution and two-sided 95% interval for excess return versus NIFTY 50 TRI.
+
+DSR, White Reality Check, and Hansen SPA are secondary research-selection diagnostics when their assumptions are met.
+
+### 18.6 Preregistered result classification
+
+Use the following decision tree after all preregistered calculations are complete:
+
+**Robust evidence**
+- primary excess return after all modeled costs is positive;
+- the dependence-aware 95% bootstrap interval for primary excess return excludes zero on the positive side;
+- the protected discipline holdout cumulative excess return is non-negative;
+- at least 5 of the 7 preregistered configurations have positive excess return;
+- the cross-sectional Top-5 permutation test rejects the random-5 null at two-sided alpha = 0.05.
+
+**Moderate evidence**
+- primary excess return is positive;
+- at least 4 of 7 configurations have positive excess return;
+- the evidence is directionally positive but at least one robust-evidence requirement above is not met;
+- no data/accounting invariant fails.
+
+**Weak/fragile evidence**
+- the primary result is positive but fewer than 4 of 7 configurations are positive, or the result is materially dependent on one implementation/cost assumption;
+- or the cross-sectional and portfolio evidence disagree.
+
+**Failure**
+- primary excess return is non-positive after costs and at least 5 of 7 configurations are non-positive;
+- and the permutation test does not reject the random-5 null at alpha = 0.05.
+
+**Inconclusive**
+- any case not meeting the definitions above, including insufficient/invalid data, unresolved accounting defects, or evidence that is too weak to distinguish the observed result from noise.
+
+A classification of failure or inconclusive is not a claim that momentum has zero expected alpha in the wider market.
+
+### 18.7 Kill/invalidity rules
+
+Stop the performance interpretation and return to implementation validation if any of the following occurs:
+
+1. PIT membership cannot be reconstructed for a required decision date.
+2. Raw-price/dividend accounting invariant fails.
+3. Corporate-action accounting produces an unexplained share/cash discontinuity.
+4. Transaction ledger totals cannot reconcile portfolio cash, holdings, and NAV.
+5. Execution timing uses a price unavailable at the decision timestamp.
+6. A protected-holdout value is found to have influenced a strategy/configuration decision before the final classification.
+7. A preregistered experiment configuration cannot be reproduced from its recorded hash/commit.
+
+These are validity failures, not negative-alpha results.
+
+### 18.8 ₹25,000 implementation disclosure
+
+The primary ₹25,000 result must report separately:
+
+- unbuyable selected-stock frequency;
+- number of unbuyable slots;
+- mean/median/max residual cash;
+- mean invested exposure;
+- mean absolute target-weight deviation;
+- actual transaction costs;
+- actual slippage;
+- gross return before implementation frictions;
+- net return after implementation frictions.
+
+The ₹100,000 scenario is the first capital sensitivity with zero unbuyable rebalances in the Phase 0.5 feasibility artifact. It is a sensitivity diagnostic, not a replacement primary capital.
+
+### 18.9 Break-even definition
+
+Break-even must be reported in two distinct forms:
+
+1. **Transaction-cost break-even:** the minimum gross strategy return required to offset realized transaction costs and slippage, holding the realized portfolio exposure path fixed.
+2. **Capital-constrained economic break-even:** the minimum gross stock-selection return required for the actual ₹25,000 portfolio, including residual-cash drag, to match the selected benchmark.
+
+Residual cash must never be counted as a transaction cost.
+
+### 18.10 Multiple-testing and reproducibility
+
+All seven preregistered configurations are fixed before performance execution. Their names, parameters, code version, configuration hash, data hashes, random seeds, and Git commit SHA must be recorded.
+
+No additional strategy variant may be promoted into the primary result table after results are observed.
+
+The complete Phase 1A preregistration is stored in `config/phase1a_preregistration.json` and must be hashed/committed before the first Phase 1 performance run.
+
