@@ -26,7 +26,7 @@ OFFICIAL_EVIDENCE = [
      "https://nsearchives.nseindia.com/web/sites/default/files/2021-02/ind_prs23022021.pdf"),
     ("2022-09-30", "ADANIENT", "INCLUSION",
      "https://nsearchives.nseindia.com/web/sites/default/files/2022-09/ind_prs01092022.pdf"),
-    ("2023-07-13", "HDFCBANK", "HDFC_AMALGAMATION",
+    ("2023-07-13", "HDFC", "HDFC_EXCLUSION_AMALGAMATION",
      "https://nsearchives.nseindia.com/web/sites/default/files/2023-07/ind_prs04072023.pdf"),
     ("2024-03-28", "SHRIRAMFIN", "INCLUSION",
      "https://www.nseindia.com/mediacoverage/nse-replacements-in-indices-wef-march-28-2024"),
