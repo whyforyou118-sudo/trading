@@ -1,4 +1,4 @@
-from src.portfolio.accounting import CostBreakdown, PortfolioState, Trade
+from src.portfolio.accounting import CostBreakdown, PortfolioState, Trade, RightsEntitlement as LedgerRightsEntitlement
 from src.portfolio.rights import RightsEntitlement, RightsRenunciation
 
 
@@ -28,6 +28,16 @@ def test_renunciation_uses_first_open_and_slippage():
     event = RightsEntitlement("2024-01-10", "GRASIM", "GRASIM-RE", 6, 179)
     renounce = RightsRenunciation(event, "2024-01-17", 320.05)
     assert round(renounce.execution_price(), 8) == round(320.05 * 0.999, 8)
+
+
+def test_ledger_integrates_rights_entitlement_path_conditionally():
+    from src.portfolio.accounting import apply_ledger
+    event = LedgerRightsEntitlement("2024-07-27", "TATACONSUM", "TATACON-RE", 1, 26)
+    state = apply_ledger(25000.0, [event])
+    assert state.shares("TATACON-RE") == 0
+
+    state = apply_ledger(25000.0, [event, Trade("2024-08-05", "TATACON-RE", "SELL", 1, 303.00)])
+    assert state.shares("TATACON-RE") == 0
 
 
 def test_path_conditional_re_sale():
