@@ -23,3 +23,12 @@ venv/
 logs/
 tmp/
 temp/
+
+# Generated audit outputs
+audits/full_price_coverage.csv
+audits/full_price_coverage.md
+audits/pit_membership_reconstruction.csv
+audits/phase05_statistical_feasibility.csv
+audits/phase05_top5_feasibility.csv
+audits/phase05_capital_feasibility.csv
+audits/phase05_cost_feasibility.csv

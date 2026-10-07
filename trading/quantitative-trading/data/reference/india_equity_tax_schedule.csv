@@ -1,0 +1,3 @@
+effective_from,effective_to,fy,stcg_rate_pct,ltcg_rate_pct,ltcg_exemption_rs,notes,source_reference
+2018-04-01,2024-07-22,FY2018-19_to_FY2024-25_pre_2024_change,15,10,100000,Listed equity shares subject to STT; LTCG regime introduced from 2018-04-01,https://www.incometax.gov.in/iec/foportal/
+2024-07-23,2026-03-31,FY2024-25_post_change_to_FY2025-26,20,12.5,125000,Finance Act 2024 changes effective for transfers on/after 2024-07-23; primary return remains pre-personal-tax,https://www.incometax.gov.in/iec/foportal/sites/default/files/2025-08/CBDT__e-Filing_ITR-6_Validation%20Rules_Version%201.0.pdf

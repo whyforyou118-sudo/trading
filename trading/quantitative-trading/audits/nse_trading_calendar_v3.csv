@@ -2879,7 +2879,7 @@ date,year,weekday,is_trading_day,source,source_reference,validation_status,sessi
 2024-11-17,2024,Sunday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
 2024-11-18,2024,Monday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-11-19,2024,Tuesday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
-2024-11-20,2024,Wednesday,False,NSE_OFFICIAL,NSE/CMTR/64960,VALIDATED,REGULAR
+2024-11-20,2024,Wednesday,False,NSE_OFFICIAL,NSE/FAOP/64959,VALIDATED,REGULAR
 2024-11-21,2024,Thursday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-11-22,2024,Friday,True,NSE_OFFICIAL,Annual NSE CM holiday circular (2024),VALIDATED,REGULAR
 2024-11-23,2024,Saturday,False,NSE_OFFICIAL,NSE exchange calendar,VALIDATED,WEEKEND
