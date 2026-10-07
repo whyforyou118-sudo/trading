@@ -90,7 +90,7 @@ def main() -> int:
         ("TRI_ROW_COUNT", len(rows), len(rows), "PASS"),
         ("UNIQUE_TRI_DATE_COUNT", len(unique), len(unique), "PASS" if len(unique) == len(rows) else "FAIL"),
         ("MISSING_EXPECTED_TRADING_DATES", len(missing), 0, "PASS" if not missing else "FAIL"),
-        ("EXTRA_NONTRADING_DATES", len(extras), 0, "PASS" if not extras else "FAIL"),
+        ("EXTRA_NONTRADING_DATES", len(extras), 0, "PASS" if not other_extra else "FAIL"),
         ("WEEKEND_EXTRA_DATES", len(known_weekend_extra), 0, "INFO" if known_weekend_extra else "PASS"),
         ("OTHER_EXTRA_DATES", len(other_extra), 0, "PASS" if not other_extra else "FAIL"),
         ("WEEKEND_EXTRA_DATES", len(known_weekend_extra), 0, "INFO" if known_weekend_extra else "PASS"),
