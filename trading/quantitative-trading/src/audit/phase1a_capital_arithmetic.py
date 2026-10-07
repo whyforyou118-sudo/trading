@@ -18,6 +18,15 @@ def pct(x: float) -> str:
     return f"{100.0 * x:.2f}%"
 
 
+def _parse_count(value: str) -> tuple[int, int | None]:
+    """Parse a count encoded as N or N/D without assuming a denominator."""
+    raw = str(value).strip()
+    if "/" not in raw:
+        return int(raw), None
+    numerator, denominator = raw.split("/", 1)
+    return int(numerator), int(denominator)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--selection", type=Path, default=DEFAULT_INPUT)
@@ -71,13 +80,31 @@ def main() -> int:
                 if key in row:
                     print(f"  {key}: {row[key]}")
             if "unbuyable_rebalances" in row:
-                n = int(row["unbuyable_rebalances"].split("/")[0])
-                d = int(row["unbuyable_rebalances"].split("/")[1])
-                print(f"Unbuyable rebalance frequency: {n}/{d} = {pct(n/d)}")
+                n, d = _parse_count(row["unbuyable_rebalances"])
+                if d is None:
+                    # The artifact may store only the numerator. Use an
+                    # explicit total_rebalances field when available; never
+                    # invent a denominator from a hard-coded assumption.
+                    total_raw = row.get("total_rebalances", "")
+                    if total_raw:
+                        _, d = _parse_count(total_raw)
+                    if d is None:
+                        print(f"Unbuyable rebalance count: {n} (denominator not present in artifact)")
+                    else:
+                        print(f"Unbuyable rebalance frequency: {n}/{d} = {pct(n/d)}")
+                else:
+                    print(f"Unbuyable rebalance frequency: {n}/{d} = {pct(n/d)}")
             if "unbuyable_slots" in row:
                 slots = int(row["unbuyable_slots"])
-                total_slots = 31 * args.holdings
-                print(f"Unbuyable selected slots: {slots}/{total_slots} = {pct(slots/total_slots)}")
+                total_slots_raw = row.get("total_selected_slots", "")
+                if total_slots_raw:
+                    _, total_slots = _parse_count(total_slots_raw)
+                else:
+                    total_slots = None
+                if total_slots:
+                    print(f"Unbuyable selected slots: {slots}/{total_slots} = {pct(slots/total_slots)}")
+                else:
+                    print(f"Unbuyable selected slots: {slots} (denominator not present in artifact)")
             if "conservative_cost_drag_pct" in row:
                 print(f"Conservative transaction-cost break-even anchor: {row['conservative_cost_drag_pct']}%")
                 print("This is a full-liquidation/rebuild cost-only anchor, not realized strategy turnover.")
