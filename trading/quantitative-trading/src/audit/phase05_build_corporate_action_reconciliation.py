@@ -43,7 +43,19 @@ EXPECTED = [
 ]
 
 def norm(x: str) -> str:
-    return " ".join((x or "").strip().split()).lower()
+    x = " ".join((x or "").strip().split()).lower()
+    return re.sub(r"[^a-z0-9]+", " ", x).strip()
+
+def nse_date(x: str) -> str:
+    x = (x or "").strip()
+    if not x or x == "-":
+        return ""
+    for fmt in ("%d-%b-%Y", "%d-%B-%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(x, fmt).date().isoformat()
+        except ValueError:
+            pass
+    return x
 
 def load_raw():
     with RAW.open("r", encoding="utf-8-sig", newline="") as f:
