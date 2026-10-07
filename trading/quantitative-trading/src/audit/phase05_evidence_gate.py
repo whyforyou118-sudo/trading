@@ -50,6 +50,7 @@ def check_cost_schedule(cfg):
     intervals=[]
     for r in rows:
         a=date.fromisoformat(r["effective_from"]); b=date.fromisoformat(r["effective_to"]) if r["effective_to"].strip() else end
+        if b<a:return False,"cost schedule contains an interval with effective_to before effective_from"
         intervals.append((a,b))
     covered=start
     for a,b in sorted(intervals):
@@ -64,7 +65,7 @@ def main():
     checks.append(("Statistical feasibility",artifact(ROOT/"audits/phase05_statistical_feasibility.csv",{"quarterly_decision_count","approx_mdes_sharpe","volatility_scaled_annualized_excess_return_mde"})))
     checks.append(("Top-5 feasibility input",artifact(ROOT/cfg["capital_feasibility_selection_file"],{"rebalance_date","execution_date","rank","symbol","execution_price","price_basis"},1)))
     checks.append(("Capital feasibility",status_artifact(ROOT/"audits/phase05_capital_feasibility.csv",{"capital","rebalance_date","unbuyable_count","cash_pct","mean_abs_weight_deviation"})))
-    checks.append(("Cost feasibility",artifact(ROOT/"audits/phase05_cost_feasibility.csv",{"capital","total_cost","cost_pct_of_starting_capital","slippage_assumption"})))
+    checks.append(("Cost feasibility",status_artifact(ROOT/"audits/phase05_cost_feasibility.csv",{"status","reason","capital","total_cost","cost_pct_of_starting_capital","slippage_assumption"})))
     checks.append(("Zerodha cost schedule",check_cost_schedule(cfg)))
     checks.append(("TRI source/data",check_tri(cfg)))
     checks.append(("TRI verification",status_artifact(ROOT/cfg["tri_verification_file"],{"check","status","evidence"})))
