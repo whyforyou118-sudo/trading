@@ -135,11 +135,16 @@ def independent_selection():
     transitions = rows(TRANSITIONS)
     identity_events = rows(EVENTS) if EVENTS.exists() else []
 
-    quarterly = [
-        d for d in days
-        if 2018 <= d.year <= 2025 and d.month in (3, 6, 9, 12)
-    ]
-    decision_dates = sorted(set(quarterly))
+    # Reproduce the exact frozen Phase 0.5 decision-date sample.
+    # Do not infer an additional 2025-12-31 decision: the frozen feasibility
+    # artifact ends at 2025-09-30 because its required next-session execution
+    # data ends at 2025-10-01.
+    reference_dates = sorted(set(x["rebalance_date"] for x in rows(REFERENCE)))
+    decision_dates = [dt.date.fromisoformat(x) for x in reference_dates]
+    if len(decision_dates) != 31:
+        raise RuntimeError(
+            f"frozen reference must contain exactly 31 decision dates; got {len(decision_dates)}"
+        )
     cache = {}
 
     def price_on(day):
