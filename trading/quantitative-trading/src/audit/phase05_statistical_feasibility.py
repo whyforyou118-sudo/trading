@@ -38,23 +38,31 @@ def main():
     a=ap.parse_args()
     cfg=json.loads(CFG.read_text(encoding="utf-8"))
     start=date.fromisoformat(cfg["research_start"]); end=date.fromisoformat(cfg["research_end"])
-    dates=qdates(start,end); n=len(dates)
+    calendar_quarter_ends=qdates(start,end)
+    # A quarter-end is not automatically a strategy decision date. The frozen
+    # 12M formation + 1M skip design needs one additional month of history.
+    # The Top-5 feasibility builder therefore starts only when the required
+    # formation endpoint exists inside the available calendar. Keep both
+    # counts visible so the diagnostic cannot overstate statistical sample size.
+    eligible_dates=[d for d in calendar_quarter_ends if (d.year > start.year or d.month > start.month)]
+    n=len(eligible_dates)
     vol=a.annual_vol if a.annual_vol is not None else float(cfg["annual_volatility_diagnostic"])
     sr=mdes_sharpe(n,float(cfg["alpha"]),float(cfg["power"]))
     mde=sr*vol
     result={
         "config_version":cfg["version"],"research_start":start.isoformat(),
-        "research_end":end.isoformat(),"quarterly_decision_count":n,
+        "research_end":end.isoformat(),"calendar_quarter_end_count":len(calendar_quarter_ends),"eligible_strategy_decision_count":n,
         "alpha":cfg["alpha"],"power":cfg["power"],
         "diagnostic_annual_volatility":vol,"approx_mdes_sharpe":sr,
         "volatility_scaled_annualized_excess_return_mde":mde,
         "interpretation":"Design-capability diagnostic only; it does not establish alpha and does not fully account for serial dependence, benchmark correlation, overlapping holding periods or multiple testing.",
-        "quarter_end_dates":";".join(d.isoformat() for d in dates)
+        "calendar_quarter_end_dates":";".join(d.isoformat() for d in calendar_quarter_ends),"eligible_strategy_decision_dates":";".join(d.isoformat() for d in eligible_dates)
     }
     with OUT.open("w",newline="",encoding="utf-8") as f:
         w=csv.DictWriter(f,fieldnames=result.keys()); w.writeheader(); w.writerow(result)
     print("PHASE 0.5 STATISTICAL FEASIBILITY")
-    print(f"Quarterly decisions: {n}")
+    print(f"Calendar quarter-ends: {len(calendar_quarter_ends)}")
+    print(f"Eligible strategy decision dates: {n}")
     print(f"Approximate MDES Sharpe: {sr:.4f}")
     print(f"Volatility-scaled annualized excess-return MDE: {mde:.2%}")
     print(f"Artifact: {OUT}")
