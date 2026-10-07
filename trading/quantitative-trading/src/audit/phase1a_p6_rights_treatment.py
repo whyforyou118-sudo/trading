@@ -18,6 +18,7 @@ from pathlib import Path
 import csv
 
 from src.portfolio.rights import RightsEntitlement, RightsRenunciation
+from src.portfolio.accounting import PortfolioState
 
 
 @dataclass(frozen=True)
@@ -124,6 +125,13 @@ def main() -> int:
                 break
         cost_ok = interval is not None and interval.get("verified", "").upper() == "TRUE"
         checks[6] = ("re_transaction_costs", cost_ok, f"RE STT seller rate={expected_stt:.5%}; verified cost interval present={interval is not None}.")
+
+        no_parent = PortfolioState(cash=25000.0, positions={})
+        no_parent_qty = no_parent.apply_rights_entitlement(ent)
+        parent = PortfolioState(cash=25000.0, positions={e.symbol: e.b})
+        parent_qty = parent.apply_rights_entitlement(ent)
+        path_ok = no_parent_qty == 0 and parent_qty == e.a and parent.shares(re_symbol) == e.a
+        checks[8] = ("path_conditional_test", path_ok, f"no-parent={no_parent_qty}; one-ratio-parent={parent_qty}.")
 
         ren = RightsRenunciation(ent, first_date.isoformat(), expected_open)
         exec_ok = ren.execution_price() == expected_open * 0.999
