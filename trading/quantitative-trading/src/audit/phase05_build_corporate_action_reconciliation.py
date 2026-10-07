@@ -44,6 +44,9 @@ EXPECTED = [
 
 def norm(x: str) -> str:
     x = " ".join((x or "").strip().split()).lower()
+    # NSE sometimes appends operational qualifiers such as "(Purpose Revised)".
+    x = re.sub(r"\\s*\\(purpose revised\\)", "", x, flags=re.IGNORECASE)
+    # Treat punctuation/slash/spacing differences as formatting, not different events.
     return re.sub(r"[^a-z0-9]+", " ", x).strip()
 
 def nse_date(x: str) -> str:
