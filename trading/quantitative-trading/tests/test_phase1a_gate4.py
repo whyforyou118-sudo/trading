@@ -1,4 +1,11 @@
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
 from audit.phase1a_gate4_independent_reproduction import independent_selection
+
 
 def test_independent_reproduction_has_31_quarters_and_five_ranks():
     rows = independent_selection()
