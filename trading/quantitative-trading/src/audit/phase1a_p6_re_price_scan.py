@@ -19,7 +19,7 @@ MANIFEST = RAW / "download_manifest.csv"
 
 TARGETS = {
     "GRASIM-RE": (dt.date(2024, 1, 17), dt.date(2024, 1, 23)),
-    "TATACONSUM-RE": (dt.date(2024, 8, 5), dt.date(2024, 8, 12)),
+    "TATACON-RE": (dt.date(2024, 8, 5), dt.date(2024, 8, 12)),
     "ADANI-RE": (dt.date(2025, 11, 25), dt.date(2025, 12, 5)),
 }
 
