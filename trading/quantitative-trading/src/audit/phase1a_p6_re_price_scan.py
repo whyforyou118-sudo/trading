@@ -91,7 +91,7 @@ def main():
                       "Chrome/154.0 Safari/537.36",
         "Accept": "application/json,text/plain,*/*",
         "Accept-Language": "en-US,en;q=0.9",
-        "Referer": "https://www.nseindia.com/historical/price-and-volume-data-per-security",
+        "Referer": "https://www.nseindia.com/report-detail/eq_security",
     })
 
     print("PHASE 1A P6.1b — NSE RE HISTORICAL PRICE DOWNLOAD")
