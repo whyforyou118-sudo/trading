@@ -1,5 +1,5 @@
 {
-  "version": "phase0.5-v1",
+  "version": "phase0.5-v2",
   "research_start": "2018-01-01",
   "research_end": "2025-12-31",
   "primary_capital": 25000,
@@ -27,5 +27,32 @@
   "tri_verification_file": "audits/phase05_tri_verification.csv",
   "pit_external_file": "audits/phase05_pit_external_reconciliation.csv",
   "corporate_action_file": "audits/phase05_corporate_action_reconciliation.csv",
-  "cost_schedule_verified": true
+  "cost_schedule_verified": true,
+  "statistical_power_label": "DOCUMENTED_LIMITATION",
+  "statistical_power_note": "31 eligible quarterly decisions imply low power; Phase 0.5 MDE is a planning diagnostic, not an adequacy claim.",
+  "planned_trial_count": 7,
+  "holdout_start": "2023-01-01",
+  "holdout_end": "2025-12-31",
+  "development_end": "2022-12-31",
+  "holdout_status": "PRE_REGISTERED",
+  "holdout_leakage_rule": "Holdout returns are not used for strategy/parameter/cost/benchmark changes; pre-holdout prices may be used only as signal warm-up information.",
+  "portfolio_weight_policy": "EQUAL_TARGET_WHOLE_SHARE",
+  "target_weight_pct": 20,
+  "unbuyable_rule": "NO_REPLACEMENT_RETAIN_CASH",
+  "fewer_than_five_eligible_rule": "HOLD_ALL_ELIGIBLE_RETAIN_REMAINDER_AS_CASH",
+  "price_mode": "RAW_UNADJUSTED",
+  "dividend_policy": "CREDIT_DIVIDENDS_SEPARATELY",
+  "adjusted_price_dividend_invariant": true,
+  "stamp_duty_primary_basis": "STATE_AGNOSTIC_SENSITIVITY_ANCHOR_PRE_2020",
+  "personal_income_tax_primary": "EXCLUDED_FROM_PRIMARY_NET_RETURN",
+  "tax_scenarios": [
+    "CAPITAL_GAINS_SCENARIO",
+    "BUSINESS_INCOME_SCENARIO"
+  ],
+  "tax_schedule_file": "data/reference/india_equity_tax_schedule.csv",
+  "momentum_diagnostic_required": true,
+  "momentum_diagnostic_start": "2018-01-01",
+  "momentum_diagnostic_end": "2022-12-31",
+  "momentum_diagnostic_method": "RANK_IC_AND_TOP_BOTTOM_DECILE_SPREAD",
+  "momentum_diagnostic_stop_rule": "Do not inspect protected holdout. Stop only if the pre-registered development diagnostic fails its predeclared minimum information criterion; otherwise proceed to Phase 1A."
 }
