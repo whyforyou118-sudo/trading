@@ -12,18 +12,26 @@ URL="https://www.niftyindices.com/Backpage.aspx/getTotalReturnIndexString"
 FIELDS=["date","value","source","source_reference"]
 
 def request_chunk(start,end):
-    payload={"cinfo":json.dumps({
-        "name":"NIFTY 50","startDate":start.strftime("%d %b %Y"),
-        "endDate":end.strftime("%d %b %Y"),"indexName":"NIFTY 50"
-    })}
+    # The ASP.NET endpoint expects cinfo as a JSON-like string with
+    # single-quoted fields, not a nested JSON object.
+    cinfo=("{'name':'NIFTY 50',"
+           f"'startDate':'{start:%d-%b-%Y}',"
+           f"'endDate':'{end:%d-%b-%Y}',"
+           "'indexName':'NIFTY 50'}")
+    payload={"cinfo":cinfo}
     data=json.dumps(payload).encode()
     req=urllib.request.Request(URL,data=data,headers={
         "Content-Type":"application/json; charset=UTF-8",
-        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154.0 Safari/537.36",
+        "X-Requested-With":"XMLHttpRequest",
+        "Accept":"application/json, text/javascript, */*; q=0.01",
+        "User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154.0 Safari/537.36 quant-research",
         "Referer":"https://www.niftyindices.com/reports/historical-data"
     },method="POST")
     with urllib.request.urlopen(req,timeout=60) as r:
-        obj=json.loads(r.read().decode("utf-8"))
+        raw=r.read().decode("utf-8-sig").strip()
+        if not raw or raw[:1] not in "{[":
+            raise RuntimeError(f"Nifty Indices returned non-JSON response: {raw[:200]!r}")
+        obj=json.loads(raw)
     raw=obj.get("d",obj)
     if isinstance(raw,str): raw=json.loads(raw)
     if not isinstance(raw,list): raise RuntimeError(f"Unexpected TRI response: {type(raw)}")
