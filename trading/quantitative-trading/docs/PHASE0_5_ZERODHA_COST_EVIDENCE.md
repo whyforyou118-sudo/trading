@@ -92,3 +92,54 @@ The current Zerodha charges page states Rs.10/crore plus GST. A historical effec
 Until every required component has date-effective historical evidence covering 2018-2025, the verified field remains FALSE and Phase 0.5 remains BLOCKED.
 
 Do not fabricate or backfill missing historical rates from the current Zerodha charges page.
+
+
+## Additional historical evidence verified
+
+### SEBI turnover fee
+
+The historical statutory rate is 0.0001% of turnover, i.e. Rs.10 per crore, for sale and purchase transactions in securities other than debt securities. A 2009 notice reproducing the SEBI amendment shows this rate effective from July 1, 2009. A 2019 amendment continued the cash-segment rate at 0.00010% (Rs.10 per crore).
+
+Sources:
+- CSE notice reproducing the 2009 SEBI notification: https://www.cse-india.com/upload/CSE%20Notices%20%26%20Circulars/2009/Notice010709.htm
+- CSE notice reproducing the March 22, 2019 SEBI amendment: https://www.cse-india.com/upload/cse_notice/REVISED_SEBI_TURNOVER_FEES.htm
+- NSE current statutory reference: https://www.nseindia.com/static/invest/first-time-investor-sebi-turnover-fees-stt-other-levies
+
+Research implication: Rs.10/crore can be treated as the SEBI turnover-fee rate throughout 2018-2025 for this equity-delivery model, with GST handled separately according to the GST effective period.
+
+### Zerodha DP charge history
+
+Zerodha's own Trading Q&A records establish a Rs.13.5 per-scrip-per-day debit charge as early as March 2016, comprising Rs.8 Zerodha + Rs.5.5 CDSL, with taxes additional. The same Rs.13.5 base charge is documented in November 2018 and remained documented in 2020/2021.
+
+Sources:
+- Zerodha Trading Q&A, March 2016: https://tradingqna.com/t/dp-charges-and-stt-charges/5637
+- Zerodha Trading Q&A, November 2018: https://tradingqna.com/t/how-to-dp-borkage-charges-calculate-in-zerodha/50236
+
+CDSL's June 2024 operating instructions state that its debit-transaction tariff changed effective June 1, 2024. Zerodha's public discussion records the corresponding Zerodha DP charge reduction from Rs.13.5 to Rs.13 effective June 1, 2024.
+
+Sources:
+- CDSL DP Operating Instructions, June 2024: https://www.cdslindia.com/downloads/DP/currentDPs/DP-Operating-Instructions-Chapters-as-on-June-30-2024.pdf
+- Zerodha Trading Q&A discussion of the June 1, 2024 reduction: https://tradingqna.com/t/cdsl-reduced-charges-will-zerodha-too/165314
+
+Therefore the working historical DP schedule can be represented as:
+- 2018-01-01 through 2024-05-31: Rs.13.50 per scrip sold per day, before GST.
+- 2024-06-01 through 2025-12-31: Rs.13.00 per scrip sold per day, before GST.
+
+The project should still preserve the source references and not infer any earlier/later rate outside these evidenced periods.
+
+## Stamp-duty decision still required
+
+The remaining material gap is pre-July-2020 stamp duty.
+
+Zerodha explicitly states that before July 1, 2020 stamp duty varied by the client's state of residence, and notes that Telangana and some other states had maximum caps per contract note. Therefore a single pan-India pre-July-2020 rate would be an unsupported simplification.
+
+Sources:
+- Zerodha Uniform Stamp Duty: https://zerodha.com/z-connect/general/uniform-stamp-duty
+- NSE Stamp Duty reference: https://www.nseindia.com/static/invest/first-time-investor-stamp-duty-charges-taxes
+
+For the primary cost model, the project must explicitly choose one of these defensible conventions before the schedule can be marked verified:
+1. A declared investor-residency state and its historical rate/cap.
+2. A documented pan-India convention used only as a sensitivity/upper-bound assumption.
+3. A state-agnostic implementation-cost analysis that reports the pre-July-2020 stamp-duty component as a range rather than a single point estimate.
+
+No choice is being silently made here.
