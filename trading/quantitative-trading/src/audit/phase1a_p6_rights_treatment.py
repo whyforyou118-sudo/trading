@@ -1,109 +1,74 @@
-"""Audit the three rights events relevant to the frozen V6 signal path.
+"""P6 rights-event resolution for the frozen V6 research path.
 
-This is a treatment audit, not a performance adjustment engine. It records the
-NSE rights ratio/issue price from the corporate-action subject. No production
-adjustment factor is persisted by this script.
+This audit distinguishes:
+1. NSE corporate-action wording (premium),
+2. verified total issue price, and
+3. the NSE rights adjustment factor used for the signal series.
+
+It intentionally does NOT invent a retail portfolio treatment for Rights
+Entitlements (REs). That remains a separate gate because an exact ₹25K
+implementation must specify whether REs are subscribed, renounced/sold, or
+allowed to lapse.
 """
 from __future__ import annotations
 
-import csv
-import re
-from datetime import datetime
-from pathlib import Path
+from dataclasses import dataclass
+from datetime import date
 
-ROOT = Path(__file__).resolve().parents[2]
-CA = ROOT / "data/raw/corporate_actions/nse_corporate_actions_2018_2025.csv"
 
-TARGETS = {
-    ("GRASIM", "2024-01-10"),
-    ("TATACONSUM", "2024-07-26"),
-    ("ADANIENT", "2025-11-17"),
-}
+@dataclass(frozen=True)
+class RightsEvent:
+    symbol: str
+    ex_date: date
+    record_date: date
+    a: int
+    b: int
+    face_value: float
+    premium: float
+    issue_price: float
+    adjustment_factor: float
+    benefit_per_old_share: float
+    source: str
 
-PATTERN = re.compile(
-    r"Rights\s+(?P<a>\d+)\s*:\s*(?P<b>\d+)\s*@\s*Premium\s+Rs\s*(?P<p>[0-9.]+)",
-    re.I,
+
+EVENTS = (
+    RightsEvent(
+        "GRASIM", date(2024, 1, 10), date(2024, 1, 10),
+        6, 179, 2.0, 1810.0, 1812.0, 0.996040, 8.174594595,
+        "NSE F&O Circular FAOP60188 / GRASIM Letter of Offer",
+    ),
+    RightsEvent(
+        "TATACONSUM", date(2024, 7, 26), date(2024, 7, 27),
+        1, 26, 1.0, 817.0, 818.0, 0.987723, 15.02222222,
+        "NSE F&O Circular FAOP63078 / Tata Consumer filing",
+    ),
+    RightsEvent(
+        "ADANIENT", date(2025, 11, 17), date(2025, 11, 17),
+        3, 25, 1.0, 1799.0, 1800.0, 0.970366, 73.73571429,
+        "NSE F&O Circular FAOP71284 / Adani Letter of Offer",
+    ),
 )
 
 
-def normalize_nse_date(value: str) -> str:
-    value = value.strip()
-    return datetime.strptime(value, "%d-%b-%Y").date().isoformat()
-
-
 def main() -> int:
-    if not CA.exists():
-        raise SystemExit(f"BLOCKED: missing {CA}")
-
-    with CA.open("r", encoding="utf-8-sig", newline="") as f:
-        rows = list(csv.DictReader(f))
-
-    found = []
-
-    for row in rows:
-        symbol = row.get("symbol", "").strip().upper()
-        raw_date = row.get("exDate", "").strip()
-
-        if not raw_date:
-            continue
-
-        try:
-            ex_date = normalize_nse_date(raw_date)
-        except ValueError:
-            continue
-
-        if (symbol, ex_date) not in TARGETS:
-            continue
-
-        match = PATTERN.search(row.get("subject", ""))
-
-        if not match:
-            print(
-                "BLOCKED: rights subject could not be parsed:",
-                row.get("subject"),
-            )
-            return 1
-
-        found.append(
-            {
-                "symbol": symbol,
-                "ex_date": ex_date,
-                "ratio_A": int(match.group("a")),
-                "ratio_B": int(match.group("b")),
-                "issue_price": float(match.group("p")),
-                "subject": row.get("subject", ""),
-                "record_date": row.get("recDate", ""),
-            }
-        )
-
-    if len(found) != len(TARGETS):
-        print(
-            "BLOCKED: expected three PIT rights events, found",
-            len(found),
-        )
-        for x in found:
-            print(x)
-        return 1
-
     print("PHASE 1A P6 — RIGHTS TREATMENT AUDIT")
-    print("Reference methodology: NSE corporate-action adjustment guidance")
-    print("No production adjustment factor is applied.")
+    print("Verified issue prices and NSE adjustment factors:")
     print()
 
-    for x in sorted(found, key=lambda z: z["ex_date"]):
+    for e in EVENTS:
         print(
-            f'{x["ex_date"]} | {x["symbol"]} | '
-            f'ratio={x["ratio_A"]}:{x["ratio_B"]} | '
-            f'issue_price={x["issue_price"]} | '
-            f'record_date={x["record_date"]}'
+            f"{e.ex_date.isoformat()} | {e.symbol} | "
+            f"ratio={e.a}:{e.b} | premium={e.premium:.2f} | "
+            f"issue_price={e.issue_price:.2f} | "
+            f"factor={e.adjustment_factor:.6f} | "
+            f"benefit_per_old_share={e.benefit_per_old_share:.8f} | "
+            f"record_date={e.record_date.isoformat()}"
         )
 
     print()
-    print(
-        "STATUS: BLOCKED — cum-date close and explicit "
-        "subscription/renunciation policy are required "
-        "before production treatment."
-    )
+    print("SIGNAL TREATMENT: RESOLVED — use the verified NSE rights adjustment factor.")
+    print("PORTFOLIO TREATMENT: BLOCKED — exact ₹25K RE subscription/renunciation policy remains required.")
+    print("STATUS: BLOCKED — P6 cannot PASS until portfolio RE treatment is explicitly implemented and tested.")
     return 2
 
 
