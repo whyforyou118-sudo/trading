@@ -11,32 +11,28 @@ OUT=ROOT/"data/reference/nifty50_tri.csv"
 URL="https://www.niftyindices.com/Backpage.aspx/getTotalReturnIndexString"
 FIELDS=["date","value","source","source_reference"]
 
-_UA=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36")
-BASE="https://www.niftyindices.com"
-TRI_URL=BASE+"/Backpage.aspx/getTotalReturnIndexString"
-REFERER=BASE+"/reports/historical-data"
+TRI_URL="https://www.niftyindices.com/Backpage.aspx/getTotalReturnIndexString"
+TRI_REFERER="https://www.niftyindices.com/reports/historical-data"
+TRI_UA=("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36")
 
 def make_session():
     try:
-        import cloudscraper
+        import httpx
     except ImportError as exc:
         raise RuntimeError(
-            "cloudscraper is required for Nifty Indices TRI access. "
-            "Install with: python -m pip install cloudscraper"
+            "httpx is required for NIFTY 50 TRI access. Install with: python -m pip install httpx"
         ) from exc
-    s=cloudscraper.create_scraper(browser={"browser":"chrome","platform":"windows","mobile":False})
-    s.headers.update({
-        "User-Agent":_UA,
-        "Accept":"application/json, text/javascript, */*; q=0.01",
-        "X-Requested-With":"XMLHttpRequest",
-        "Referer":REFERER,
-        "Origin":BASE,
-    })
-    # Warm the Cloudflare-protected historical-data page and retain its cookies.
-    warm=s.get(REFERER,timeout=60)
-    warm.raise_for_status()
-    return s
+    return httpx.Client(
+        headers={
+            "Content-Type":"application/json; charset=UTF-8",
+            "X-Requested-With":"XMLHttpRequest",
+            "Referer":TRI_REFERER,
+            "User-Agent":TRI_UA,
+        },
+        follow_redirects=False,
+        timeout=120.0,
+    )
 
 def request_chunk(session,start,end):
     # The ASP.NET endpoint expects cinfo as a JSON-like string with
@@ -47,8 +43,14 @@ def request_chunk(session,start,end):
            "'indexName':'NIFTY 50'}")
     payload={"cinfo":cinfo}
     data=json.dumps(payload).encode()
-    r=session.post(TRI_URL,json=payload,timeout=120)
-    r.raise_for_status()
+    r=session.post(TRI_URL,content=json.dumps(payload))
+    if r.status_code != 200:
+        raise RuntimeError(f"Nifty Indices TRI HTTP {r.status_code}: {r.text[:500]!r}")
+    if r.headers.get("content-type","").lower().split(";")[0] != "application/json":
+        raise RuntimeError(
+            f"Nifty Indices TRI returned {r.headers.get('content-type')!r}; "
+            f"location={r.headers.get('location')!r}; body={r.text[:500]!r}"
+        )
     raw=r.text.lstrip("\ufeff").strip()
     if not raw or raw[:1] not in "{[":
         raise RuntimeError(f"Nifty Indices returned non-JSON response: {raw[:200]!r}")
