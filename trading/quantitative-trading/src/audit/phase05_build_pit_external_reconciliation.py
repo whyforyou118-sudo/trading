@@ -67,6 +67,7 @@ def main():
         # A match is only a candidate for manual reconciliation. It is NOT
         # marked PASS because the official document must be checked for the
         # exact effective date/action and the local state transition.
+        local_matches = "|".join([m["symbol"] + ":" + m["action"] + ":" + m["isin"] for m in matches])
         required_matches = 2 if d == "2021-03-31" else 1
         status = "PASS" if len(matches) >= required_matches else "FAIL"
         evidence = (
