@@ -18,6 +18,8 @@ NSE_TCS = "https://www.nseindia.com/companies-listing/corporate-filings-actions?
 NSE_BEL = "https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=BEL"
 NSE_GAIL = "https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=GAIL"
 NSE_ITC = "https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=ITC"
+NSE_SUNTV = "https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=SUNTV"
+SUNTV_CORROBORATION = "https://trendlyne.com/equity/Dividend/SUNTV/1318/sun-tv-network-ltd-dividend/"
 
 EXPECTED = [
     ("GAIL","18-Jan-2018","20-Jan-2018","Interim Dividend - Rs 7.65 Per Share",NSE_GAIL),
@@ -39,7 +41,7 @@ EXPECTED = [
     ("TCS","16-Jan-2023","17-Jan-2023","Interim Dividend - Rs 8 Per Share Special Dividend - Rs 67 Per Share",NSE_TCS),
     ("ITC","14-Feb-2022","15-Feb-2022","Interim Dividend - Rs 5.25 Per Share",NSE_ITC),
     ("ITC","15-Feb-2023","15-Feb-2023","Interim Dividend - Rs  6 Per Share",NSE_ITC),
-    ("ITC","30-May-2023","30-May-2023","Dividend - Rs 6.75 Per Share /Special Dividend - Rs 2.75 Per Share",NSE_ITC),
+    ("SUNTV","16-Feb-2018","20-Feb-2018","Interim Dividend - Rs 2.5 Per Share (Purpose Revised)",NSE_SUNTV),
 ]
 
 def norm(x: str) -> str:
@@ -97,7 +99,7 @@ def main():
             "isin": isin,
             "status": status,
             "source_reference": source,
-            "reconciliation_note": detail,
+            "reconciliation_note": detail + ("; independent secondary corroboration: " + SUNTV_CORROBORATION if symbol == "SUNTV" else ""),
         })
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
