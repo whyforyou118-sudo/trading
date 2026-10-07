@@ -88,6 +88,6 @@ def test_ex_date_dividend_precedes_same_day_open_trade():
             Trade("2020-01-02", "ABC", "SELL", 10, 101.0),
         ],
     )
-    assert state.cash == 1050.0
+    assert state.cash == 60.0
     assert state.shares("ABC") == 0
     assert state.cumulative_dividends == 50.0
