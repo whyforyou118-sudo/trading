@@ -1,0 +1,25 @@
+name: Phase 0.5 Python syntax
+on:
+  push:
+    branches: ["phase05-research-feasibility"]
+  pull_request:
+    branches: ["phase0-foundation-hardening"]
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile Phase 0 and Phase 0.5 audit scripts
+        working-directory: trading/quantitative-trading
+        run: |
+          python -m py_compile src/audit/check_coverage.py
+          python -m py_compile src/audit/phase0_gate.py
+          python -m py_compile src/audit/validate_pit_membership.py
+          python -m py_compile src/audit/phase05_statistical_feasibility.py
+          python -m py_compile src/audit/phase05_build_top5_feasibility.py
+          python -m py_compile src/audit/phase05_capital_feasibility.py
+          python -m py_compile src/audit/phase05_cost_feasibility.py
+          python -m py_compile src/audit/phase05_evidence_gate.py
