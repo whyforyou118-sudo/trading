@@ -94,7 +94,7 @@
     "alpha": 0.05
   },
   "portfolio_inference": {
-    "primary_bootstrap": "stationary_or_block_bootstrap",
+    "primary_bootstrap": "STATIONARY_BOOTSTRAP_MEAN_BLOCK_3",
     "confidence_level": 0.95,
     "resample_unit": "complete portfolio return interval",
     "iid_gaussian_only": "NOT_PRIMARY",
@@ -102,7 +102,17 @@
       "DSR",
       "WHITE_REALITY_CHECK",
       "HANSEN_SPA"
-    ]
+    ],
+    "bootstrap_mean_block_length_primary": 3,
+    "bootstrap_mean_block_length_sensitivity": [
+      2,
+      3,
+      4
+    ],
+    "bootstrap_replications": 10000,
+    "bootstrap_random_seed": 20261007,
+    "bootstrap_confidence_level": 0.95,
+    "bootstrap_resample_unit": "complete_portfolio_return_interval"
   },
   "classification": {
     "robust_evidence": {
