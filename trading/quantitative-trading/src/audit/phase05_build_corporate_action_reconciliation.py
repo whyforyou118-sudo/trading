@@ -14,32 +14,32 @@ ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "data/raw/corporate_actions/corporate_actions_sample.csv"
 OUT = ROOT / "audits/phase05_corporate_action_reconciliation.csv"
 
-NSE_INFOSYS = "https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=INFY&tabIndex=equity"
-NSE_ITC = "https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=ITC&tabIndex=sme"
+NSE_TCS = "https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=TCS"
+NSE_BEL = "https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=BEL"
+NSE_GAIL = "https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=GAIL"
+NSE_ITC = "https://www.nseindia.com/companies-listing/corporate-filings-actions?symbol=ITC"
 
 EXPECTED = [
-    # Official NSE: Infosys corporate-actions page.
-    ("INFY","2018-09-04","05-Sep-2018","Bonus 1:1",NSE_INFOSYS),
-    ("INFY","2018-10-23","24-Oct-2018","Interim Dividend - Rs 8 Per Share",NSE_INFOSYS),
-    ("INFY","2019-01-24","25-Jan-2019","Special Dividend - Rs 4 Per Share",NSE_INFOSYS),
-    ("INFY","2019-10-23","24-Oct-2019","Interim Dividend - Rs 8 Per Share",NSE_INFOSYS),
-    ("INFY","2020-05-29","01-Jun-2020","Dividend - Rs 9.50 Per Share",NSE_INFOSYS),
-    ("INFY","2020-10-23","26-Oct-2020","Interim Dividend - Rs 12 Per Share",NSE_INFOSYS),
-    ("INFY","2021-05-31","01-Jun-2021","Annual General Meeting/Dividend - Rs 15 Per Share",NSE_INFOSYS),
-    ("INFY","2021-10-26","27-Oct-2021","Interim Dividend - Rs 15 Per Share",NSE_INFOSYS),
-    ("INFY","2022-05-31","01-Jun-2022","Annual General Meeting/Dividend - Rs 16 Per Share",NSE_INFOSYS),
-    ("INFY","2022-10-27","28-Oct-2022","Interim Dividend - Rs 16.50 Per Share",NSE_INFOSYS),
-    # Official NSE: ITC corporate-actions page.
-    ("ITC","2018-05-25","29-May-2018","Dividend- Rs 5.15 Per Share",NSE_ITC),
-    ("ITC","2019-05-22","24-May-2019","Dividend - Rs 5.75 Per Share",NSE_ITC),
-    ("ITC","2020-07-06","08-Jul-2020","Dividend - Rs 10.15 Per Share",NSE_ITC),
-    ("ITC","2021-02-22","23-Feb-2021","Interim Dividend - Rs 5 Per Share",NSE_ITC),
-    ("ITC","2021-06-10","11-Jun-2021","Dividend - Rs 5.75 Per Share",NSE_ITC),
-    ("ITC","2022-02-14","15-Feb-2022","Interim Dividend - Rs 5.25 Per Share",NSE_ITC),
-    ("ITC","2022-05-26","28-May-2022","Dividend - Rs 6.25 Per Share",NSE_ITC),
-    ("ITC","2023-02-15","15-Feb-2023","Interim Dividend - Rs 6 Per Share",NSE_ITC),
-    ("ITC","2023-05-30","30-May-2023","Dividend - Rs 6.75 Per Share /Special Dividend - Rs 2.75 Per Share",NSE_ITC),
-    ("ITC","2024-02-08","08-Feb-2024","Interim Dividend - Rs 6.25 Per Share",NSE_ITC),
+    ("GAIL","18-Jan-2018","20-Jan-2018","Interim Dividend - Rs 7.65 Per Share",NSE_GAIL),
+    ("GAIL","27-Mar-2018","29-Mar-2018","Bonus 1:3",NSE_GAIL),
+    ("GAIL","17-Feb-2020","18-Feb-2020","Interim Dividend - Rs 6.4 Per Share",NSE_GAIL),
+    ("GAIL","21-Mar-2022","22-Mar-2022","Interim Dividend - Rs 5  Per Share",NSE_GAIL),
+    ("GAIL","21-Mar-2023","21-Mar-2023","Interim Dividend - Rs 4 Per Share",NSE_GAIL),
+    ("BEL","08-Feb-2018","09-Feb-2018","Interim Dividend Rs 1.60 Per Share",NSE_BEL),
+    ("BEL","08-Feb-2018","09-Feb-2018","Buyback",NSE_BEL),
+    ("BEL","11-Feb-2020","12-Feb-2020","Interim Dividend - Rs 1.40 Per Share",NSE_BEL),
+    ("BEL","09-Feb-2022","10-Feb-2022","Interim Dividend - Rs 1.50 Per Share",NSE_BEL),
+    ("BEL","24-Mar-2022","26-Mar-2022","Interim Dividend - Rs 1.50 Per Share",NSE_BEL),
+    ("BEL","24-Mar-2023","25-Mar-2023","Interim Dividend - Rs 0.60 Per Share",NSE_BEL),
+    ("TCS","22-Jan-2018","23-Jan-2018","Interim Dividend - Rs 7 Per Share",NSE_TCS),
+    ("TCS","23-Jan-2020","25-Jan-2020","Interim Dividend - Rs 5 Per Share",NSE_TCS),
+    ("TCS","19-Mar-2020","20-Mar-2020","Interim Dividend - Rs 12 Per Share",NSE_TCS),
+    ("TCS","19-Jan-2022","20-Jan-2022","Interim Dividend - Rs 7 Per Share",NSE_TCS),
+    ("TCS","22-Feb-2022","23-Feb-2022","Buyback",NSE_TCS),
+    ("TCS","16-Jan-2023","17-Jan-2023","Interim Dividend - Rs 8 Per Share Special Dividend - Rs 67 Per Share",NSE_TCS),
+    ("ITC","14-Feb-2022","15-Feb-2022","Interim Dividend - Rs 5.25 Per Share",NSE_ITC),
+    ("ITC","15-Feb-2023","15-Feb-2023","Interim Dividend - Rs  6 Per Share",NSE_ITC),
+    ("ITC","30-May-2023","30-May-2023","Dividend - Rs 6.75 Per Share /Special Dividend - Rs 2.75 Per Share",NSE_ITC),
 ]
 
 def norm(x: str) -> str:
