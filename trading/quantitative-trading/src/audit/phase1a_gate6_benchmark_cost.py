@@ -32,6 +32,39 @@ def load_csv(path: Path):
         return list(csv.DictReader(f))
 
 
+def benchmark_series_check(path: Path):
+    if not path.exists():
+        return False, f"missing benchmark artifact: {path.relative_to(ROOT)}"
+    try:
+        rows = load_csv(path)
+    except Exception as exc:
+        return False, f"cannot read benchmark artifact: {exc}"
+    if not rows:
+        return False, "benchmark artifact is empty"
+    required = {"date", "value", "source", "source_reference"}
+    if not required.issubset(rows[0]):
+        return False, f"benchmark schema missing: {sorted(required - set(rows[0]))}"
+    dates = []
+    for row in rows:
+        try:
+            d = dt.date.fromisoformat(row["date"])
+            v = float(row["value"])
+            if v <= 0:
+                return False, f"non-positive benchmark value on {d}"
+            if row["source"].strip() != "Nifty Indices Historical Data — Total Returns Index Values":
+                return False, f"unexpected benchmark source on {d}"
+            if not row["source_reference"].strip():
+                return False, f"missing source reference on {d}"
+            dates.append(d)
+        except (KeyError, TypeError, ValueError) as exc:
+            return False, f"invalid benchmark row: {row!r}: {exc}"
+    if len(dates) != len(set(dates)):
+        return False, "benchmark contains duplicate dates"
+    if min(dates) > START or max(dates) < END:
+        return False, f"benchmark coverage {min(dates)} to {max(dates)} does not cover frozen period"
+    return True, f"{len(rows)} unique observations; coverage {min(dates)} to {max(dates)}"
+
+
 def coverage_check(rows):
     intervals = []
     for row in rows:
@@ -76,10 +109,10 @@ def main():
         ("NIFTY_50_TRI", TRI),
         ("NIFTY_50_EQUAL_WEIGHT_SECONDARY", EW),
     ]:
-        present = path.exists()
-        benchmark_results.append((name, str(path.relative_to(ROOT)), "PASS" if present else "BLOCKED"))
-        if not present:
-            failures.append(f"required benchmark artifact missing: {path.relative_to(ROOT)}")
+        ok, detail = benchmark_series_check(path)
+        benchmark_results.append((name, str(path.relative_to(ROOT)), "PASS" if ok else "BLOCKED"))
+        if not ok:
+            failures.append(detail)
 
     # Required exposure-matched formula must remain explicit in the preregistration.
     formula = preg.get("exposure_matched_benchmark", {}).get("formula", "")
