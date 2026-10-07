@@ -33,10 +33,10 @@ def test_renunciation_uses_first_open_and_slippage():
 def test_ledger_integrates_rights_entitlement_path_conditionally():
     from src.portfolio.accounting import apply_ledger
     event = LedgerRightsEntitlement("2024-07-27", "TATACONSUM", "TATACON-RE", 1, 26)
-    state = apply_ledger(25000.0, [event])
+    state = apply_ledger(25000.0, [event], initial_positions={"TATACONSUM": 25})
     assert state.shares("TATACON-RE") == 0
 
-    state = apply_ledger(25000.0, [event, Trade("2024-08-05", "TATACON-RE", "SELL", 1, 303.00)])
+    state = apply_ledger(25000.0, [event, Trade("2024-08-05", "TATACON-RE", "SELL", 1, 303.00)], initial_positions={"TATACONSUM": 26})
     assert state.shares("TATACON-RE") == 0
 
 
