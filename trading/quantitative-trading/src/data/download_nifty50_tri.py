@@ -47,15 +47,20 @@ def request_chunk(session,start,end):
     r=session.post(TRI_URL,content=json.dumps(payload))
     if r.status_code != 200:
         raise RuntimeError(f"Nifty Indices TRI HTTP {r.status_code}: {r.text[:500]!r}")
-    if r.headers.get("content-type","").lower().split(";")[0] != "application/json":
-        raise RuntimeError(
-            f"Nifty Indices TRI returned {r.headers.get('content-type')!r}; "
-            f"location={r.headers.get('location')!r}; body={r.text[:500]!r}"
-        )
     raw=r.text.lstrip("\ufeff").strip()
+    # Nifty currently labels this endpoint text/html even when the body is
+    # valid JSON. Validate the payload itself rather than trusting MIME type.
     if not raw or raw[:1] not in "{[":
-        raise RuntimeError(f"Nifty Indices returned non-JSON response: {raw[:200]!r}")
-    obj=json.loads(raw)
+        raise RuntimeError(
+            f"Nifty Indices TRI returned non-JSON content: "
+            f"content_type={r.headers.get('content-type')!r}; body={raw[:500]!r}"
+        )
+    try:
+        obj=json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"Nifty Indices TRI returned invalid JSON: {raw[:500]!r}"
+        ) from exc
     raw=obj.get("d",obj)
     if isinstance(raw,str): raw=json.loads(raw)
     if not isinstance(raw,list): raise RuntimeError(f"Unexpected TRI response: {type(raw)}")
