@@ -64,6 +64,9 @@ class Trade:
 
 @dataclass(frozen=True)
 class Dividend:
+    # date is the ex/entitlement date used by the historical ledger.
+    # Holdings at the prior close are entitled; same-day open trades do not
+    # change the entitlement for that ex-date dividend.
     date: str
     symbol: str
     per_share: float
@@ -198,13 +201,14 @@ def add_costs(a: CostBreakdown, b: CostBreakdown) -> CostBreakdown:
 def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent]) -> PortfolioState:
     """Replay a complete event ledger in deterministic date/priority order.
 
-    Same-day priority is corporate action, trade, dividend. This makes the
-    entitlement convention explicit and deterministic for synthetic tests;
-    historical ingestion must encode the source's ex/record-date convention
-    before using this function.
+    Same-day priority is corporate action, dividend, trade. Dividend events
+    represent ex/entitlement dates, so shares held at the prior close receive
+    the dividend even when a same-day open trade subsequently changes the
+    position. Historical ingestion must reconcile ex/record/payment dates from
+    authoritative source records before using this function.
     """
     state = PortfolioState(cash=initial_cash)
-    priority = {SecurityConversion: 0, ShareRatioAction: 0, Trade: 1, Dividend: 2}
+    priority = {SecurityConversion: 0, ShareRatioAction: 0, Dividend: 1, Trade: 2}
     ordered = sorted(enumerate(events), key=lambda x: (x[1].date, priority[type(x[1])], x[0]))
     for _, event in ordered:
         if isinstance(event, Trade):
