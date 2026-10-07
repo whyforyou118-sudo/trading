@@ -28,7 +28,7 @@ PATTERNS = {
     "BUYBACK": r"buy.?back|buy back",
     "BONUS": r"bonus",
     "SPLIT": r"split|sub[\s-]?division|subdivision|consolidation",
-    # NSE source text contains a documented typo: "Dividned".
+    # NSE source text contains documented typo variants.
     "DIVIDEND": r"dividend|dividned",
     "INTEREST": r"interest payment",
     "DISTRIBUTION": r"distribution",
@@ -81,6 +81,12 @@ def subtract_months(d: date, months: int) -> date:
 
 def classify(subject: str) -> str:
     subject = subject.strip()
+
+    # An explicit dividend declaration is economically a dividend even when
+    # the source subject also contains the word "scheme". Keep the general
+    # scheme precedence unchanged for genuine scheme records.
+    if re.search(PATTERNS["DIVIDEND"], subject, re.IGNORECASE):
+        return "DIVIDEND"
 
     for event_class in PRECEDENCE:
         if re.search(PATTERNS[event_class], subject, re.IGNORECASE):
