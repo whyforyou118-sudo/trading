@@ -1,5 +1,5 @@
 {
-  "version": "phase1a-v1",
+  "version": "phase1a-v2-review-resolution",
   "frozen_primary": {
     "universe": "NIFTY_50_PIT",
     "formation_months": 12,
@@ -175,5 +175,77 @@
     "random_seeds_required": true,
     "git_commit_sha_required": true,
     "freeze_before_performance_run": true
+  },
+  "review_resolution": {
+    "status": "V6_VALIDATION_RESOLUTION",
+    "performance_run_allowed": false,
+    "gate_order": [
+      "G1_ANNOUNCEMENT_VS_EFFECTIVE_MEMBERSHIP_DATE",
+      "G2_SIGNAL_PRICE_AND_SPLIT_BONUS_INVARIANT",
+      "G3_REAL_CORPORATE_ACTION_AND_DIVIDEND_LEDGER_REPLAYS",
+      "G4_INDEPENDENT_SECOND_IMPLEMENTATION_REPRODUCTION",
+      "G5_PRE_REGISTERED_TWO_ESTIMANDS_AND_RANDOM5_INFERENCE",
+      "G6_BENCHMARK_AND_COST_RECONCILIATION",
+      "G7_FREEZE_AND_PERFORMANCE_AUTHORIZATION"
+    ],
+    "time_budget": {
+      "hours_per_week": 10,
+      "maximum_weeks": 8,
+      "stop_rule": "If validation gates are not passed within 8 weeks, narrow replay scope only by explicitly documenting the omitted event classes; never silently skip a gate or authorize performance."
+    },
+    "estimands": {
+      "A_SIGNAL_LEVEL_DIAGNOSTIC": {
+        "role": "diagnostic_and_inference_only_not_a_replacement_strategy",
+        "implementation": "fractional/notional capital with the frozen signal, execution, cost and universe rules; no whole-share residual-cash constraint",
+        "primary_comparison": "top5_vs_random5",
+        "economic_threshold": "mean_net_excess_per_quarter >= 0.0025",
+        "classification": "PASS if threshold and pre-registered inference criteria are met; INCONCLUSIVE if evidence does not distinguish the effect from noise; FAIL if the observed effect is non-positive and the null test does not support selection information."
+      },
+      "B_RETAIL_IMPLEMENTATION": {
+        "role": "frozen_primary_strategy",
+        "implementation": "₹25,000 whole shares, next actual trading-day open, 0.10% slippage, ZERODHA_DATE_EFFECTIVE, NO_REPLACEMENT_RETAIN_CASH",
+        "economic_threshold": "annualized_net_excess_return >= 0.01",
+        "classification": "PASS only when the frozen implementation clears the economic threshold and the pre-registered robustness/inference gates; otherwise INCONCLUSIVE or FAIL according to the registered rules."
+      },
+      "claims_rule": "A may not rescue, replace, or redefine B. Any A result must be reported with its own PASS/INCONCLUSIVE/FAIL classification."
+    },
+    "economic_threshold_rationale": {
+      "hurdle_annualized_net_excess_pct": 1,
+      "equivalent_quarterly_mean_excess_pct": 0.25,
+      "rationale": "A 1.00 percentage-point annualized net excess hurdle is an explicit economic-materiality threshold for a concentrated bespoke strategy. It is intentionally above the approximately 0.30–0.31% TER currently shown by Nifty 200 Momentum products, so a positive result must clear more than a low-cost passive momentum product's fee level.",
+      "current_market_reference": {
+        "hdfc_nifty200_momentum_30_etf_ter_pct": 0.3,
+        "motilal_oswal_nifty200_momentum_30_index_fund_direct_ter_pct": 0.31,
+        "checked_date": "2026-10-07"
+      },
+      "note": "This is a pre-registered project decision, not a claim that 1.00 percentage point is a universal statistical threshold."
+    },
+    "random5_null": {
+      "draw_count": 100000,
+      "seed": 20261007,
+      "statistic": "mean_net_excess_return_per_quarter of frozen Top-5 portfolio versus each random-5 portfolio",
+      "sampling_universe": "all 50 PIT-eligible NIFTY 50 names on each decision date",
+      "sampling": "5 names without replacement from all eligible names; do not pre-filter to buyable names",
+      "unbuyable_rule": "Apply the exact frozen ₹25,000 whole-share buyability rule to every random draw; an unbuyable selected name becomes residual cash under NO_REPLACEMENT_RETAIN_CASH. Do not replace it and do not redraw.",
+      "costs_and_execution": "Use the same next-actual-trading-day-open execution, 0.10% slippage, ZERODHA_DATE_EFFECTIVE costs, and dividend/corporate-action accounting as the frozen primary implementation.",
+      "p_value": "one-sided Monte Carlo p-value for the observed Top-5 excess versus the random-5 null; plus-one correction.",
+      "expected_outcome": "INCONCLUSIVE is an explicitly expected and acceptable outcome because the sample contains only 31 quarterly decision dates."
+    },
+    "independent_implementation": {
+      "requirement": "A second implementation must be written from this specification alone without inspecting, copying, or refactoring the first implementation.",
+      "style_constraint": "Use a materially different implementation style, e.g. explicit chronological loops and dictionaries rather than vectorized/pandas logic.",
+      "acceptance": "Exact equality of the five selected symbols on all 31 quarterly decision dates, including rank ordering where ties are relevant.",
+      "mismatch_rule": "Any mismatch is a specification-resolution gate failure. Resolve the ambiguity in the specification first; do not patch one implementation merely to force agreement."
+    },
+    "dividend_timing": {
+      "required": true,
+      "convention": "Historical ingestion must explicitly encode ex-date, record-date, and payment-date semantics before ledger replay.",
+      "test_requirement": "At least one real historical dividend case must be replayed through the ledger with entitlement and cash-credit timing checked against authoritative source records."
+    },
+    "gate1_rule": {
+      "required_for_pass": "For every NIFTY 50 constituent change used in 2018-2025 reconstruction, record the official announcement/publication date and the effective date separately; announcement date must precede effective date.",
+      "evidence": "Official NSE/NSE Indices publication or circular; repository filename dates alone are not sufficient.",
+      "failure": "Any unresolved announcement/effective-date mismatch blocks all downstream gates."
+    }
   }
 }
