@@ -55,11 +55,37 @@ def parse_csv_rows(raw: bytes):
     reader = csv.DictReader(io.StringIO(text))
     if not reader.fieldnames:
         return []
-    headers = {h.strip() for h in reader.fieldnames}
-    required = {"Date", "Open", "High", "Low", "Close"}
-    if not required.issubset(headers):
-        raise ValueError(f"unexpected CSV headers: {reader.fieldnames}")
-    return list(reader)
+    def norm(name):
+        return " ".join(str(name).strip().lower().split())
+
+    header_map = {norm(h): h for h in reader.fieldnames}
+    required = {
+        "symbol", "series", "date", "prev close",
+        "open price", "high price", "low price", "close price"
+    }
+    missing = required - set(header_map)
+    if missing:
+        raise ValueError(
+            f"unexpected NSE CSV headers; missing={sorted(missing)} "
+            f"actual={reader.fieldnames}"
+        )
+
+    rows = []
+    for raw in reader:
+        rows.append({
+            "Symbol": raw.get(header_map["symbol"], "").strip(),
+            "Series": raw.get(header_map["series"], "").strip(),
+            "Date": raw.get(header_map["date"], "").strip(),
+            "Prev Close": raw.get(header_map["prev close"], "").strip(),
+            "Open Price": raw.get(header_map["open price"], "").strip(),
+            "High Price": raw.get(header_map["high price"], "").strip(),
+            "Low Price": raw.get(header_map["low price"], "").strip(),
+            "Close Price": raw.get(header_map["close price"], "").strip(),
+            "Total Traded Quantity": raw.get(
+                header_map.get("total traded quantity", ""), ""
+            ).strip() if header_map.get("total traded quantity") else "",
+        })
+    return rows
 
 
 def row_date(row):
@@ -172,12 +198,12 @@ def main():
                                 "date": row_date(row).isoformat(),
                                 "symbol": symbol,
                                 "series": row.get("Series", series),
-                                "open": row.get("Open", ""),
-                                "high": row.get("High", ""),
-                                "low": row.get("Low", ""),
-                                "close": row.get("Close", ""),
+                                "open": row.get("Open Price", ""),
+                                "high": row.get("High Price", ""),
+                                "low": row.get("Low Price", ""),
+                                "close": row.get("Close Price", ""),
                                 "prev_close": row.get("Prev Close", ""),
-                                "volume": row.get("Volume", ""),
+                                "volume": row.get("Total Traded Quantity", ""),
                             })
                     print(f"{symbol}: FOUND series={series}, rows={len(rows)}")
                     found = True
