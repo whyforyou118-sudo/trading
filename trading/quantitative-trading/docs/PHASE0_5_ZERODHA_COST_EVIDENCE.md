@@ -127,7 +127,24 @@ Therefore the working historical DP schedule can be represented as:
 
 The project should still preserve the source references and not infer any earlier/later rate outside these evidenced periods.
 
+## Selected Option C: state-agnostic pre-July-2020 stamp-duty sensitivity
+
+The primary research convention is now **Option C**: do not assume an investor-residency state for 2018-01-01 through 2020-06-30.
+
+Zerodha's own historical explanation confirms that pre-July-2020 stamp duty varied by resident state, with most states around Rs.1,000/crore for equity delivery while some states, including Telangana and Haryana, had contract-note caps. citeturn0search2
+
+Therefore the primary cost model will:
+- keep pre-July-2020 stamp duty explicitly state-dependent;
+- report a documented sensitivity/range rather than silently choosing a state;
+- use the uniform 0.015% buy-side rate from 2020-07-01 onward. Zerodha's July 2020 bulletin confirms the uniform rate and effective date. citeturn0search0
+- not claim that a single pre-2020 rate represents all Indian retail investors.
+
+For a conservative sensitivity anchor, the Zerodha historical description of Rs.1,000/crore for most states can be represented as 0.010% on the buy side, while the actual primary result remains state-agnostic. This is an analytical sensitivity anchor, not a claim that it applied in every state. citeturn0search2
+
+The cost-feasibility implementation must therefore be updated so that the pre-July-2020 stamp-duty assumption is visible as a sensitivity/range and cannot be mistaken for a universal historical rate.
+
 ## Stamp-duty decision still required
+
 
 The remaining material gap is pre-July-2020 stamp duty.
 
@@ -137,9 +154,4 @@ Sources:
 - Zerodha Uniform Stamp Duty: https://zerodha.com/z-connect/general/uniform-stamp-duty
 - NSE Stamp Duty reference: https://www.nseindia.com/static/invest/first-time-investor-stamp-duty-charges-taxes
 
-For the primary cost model, the project must explicitly choose one of these defensible conventions before the schedule can be marked verified:
-1. A declared investor-residency state and its historical rate/cap.
-2. A documented pan-India convention used only as a sensitivity/upper-bound assumption.
-3. A state-agnostic implementation-cost analysis that reports the pre-July-2020 stamp-duty component as a range rather than a single point estimate.
-
-No choice is being silently made here.
+For the primary cost model, Option C is selected. The implementation must preserve the uncertainty rather than silently selecting a state.
