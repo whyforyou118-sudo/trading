@@ -31,7 +31,11 @@ def audit_decision_table(path: Path) -> list[PITFinding]:
             if decision < start: findings.append(PITFinding(row_no,"FUTURE_MEMBERSHIP",row["symbol"]))
             if end is not None and decision > end: findings.append(PITFinding(row_no,"EXPIRED_MEMBERSHIP",row["symbol"]))
             if source > decision: findings.append(PITFinding(row_no,"FUTURE_SIGNAL",row["symbol"]))
-            if execution <= decision: findings.append(PITFinding(row_no,"INVALID_EXECUTION_DATE",row["symbol"]))
+            # Execution must occur after both the decision date and the
+            # signal source date. This prevents same-day execution from
+            # consuming information that is only available at that date.
+            if execution <= decision or execution <= source:
+                findings.append(PITFinding(row_no,"INVALID_EXECUTION_DATE",row["symbol"]))
     return findings
 
 if __name__ == "__main__":
