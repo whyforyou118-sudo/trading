@@ -13,6 +13,10 @@ OUT=ROOT/"audits/phase05_tri_verification.csv"
 NSE_REF="https://www.nseindia.com/all-reports"
 
 def load_tri():
+    if not TRI.exists():
+        raise FileNotFoundError(
+            f"TRI dataset missing: {TRI}. Run src/data/download_nifty50_tri.py first."
+        )
     with TRI.open("r",encoding="utf-8-sig",newline="") as f:
         return {r["date"]:r for r in csv.DictReader(f)}
 
