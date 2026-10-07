@@ -17,7 +17,43 @@ jobs:
         run: python -m pip install --upgrade pip pytest
       - name: Compile Phase 1A Python
         run: python -m compileall trading/quantitative-trading/src trading/quantitative-trading/tests
-      - name: Run Phase 1A tests
+      - name: Test inference
         run: |
           cd trading/quantitative-trading
-          python -m pytest -q tests/test_phase1a_inference.py tests/test_phase1a_pit.py tests/test_phase1a_accounting.py tests/test_phase1a_gate2.py tests/test_phase1a_gate3.py tests/test_phase1a_gate4.py tests/test_phase1a_gate5.py tests/test_phase1a_gate6.py tests/test_phase1a_preflight_contract.py tests/test_phase1a_p4_membership.py
+          python -m pytest -q tests/test_phase1a_inference.py
+      - name: Test PIT
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1a_pit.py
+      - name: Test accounting
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1a_accounting.py
+      - name: Test Gate 2
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1a_gate2.py
+      - name: Test Gate 3
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1a_gate3.py
+      - name: Test Gate 4
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1a_gate4.py
+      - name: Test Gate 5
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1a_gate5.py
+      - name: Test Gate 6
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1a_gate6.py
+      - name: Test final contract
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1a_preflight_contract.py
+      - name: Test membership reconciliation
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1a_p4_membership.py
