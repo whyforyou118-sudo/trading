@@ -10,7 +10,13 @@
     "execution": "next_actual_trading_day_open",
     "price_mode": "RAW_UNADJUSTED",
     "slippage_pct": 0.1,
-    "cost_model": "ZERODHA_DATE_EFFECTIVE"
+    "cost_model": "ZERODHA_DATE_EFFECTIVE",
+    "target_weight_pct": 20,
+    "direction": "long_only",
+    "leverage": "none",
+    "cash_return_assumption_pct": 0,
+    "unbuyable_policy": "NO_REPLACEMENT_RETAIN_CASH",
+    "live_max_cumulative_loss_rs": 5000
   },
   "decision_dates": {
     "research_start": "2018-01-01",
@@ -190,8 +196,8 @@
     ],
     "time_budget": {
       "hours_per_week": 10,
-      "maximum_weeks": 8,
-      "stop_rule": "If validation gates are not passed within 8 weeks, narrow replay scope only by explicitly documenting the omitted event classes; never silently skip a gate or authorize performance."
+      "maximum_weeks": null,
+      "stop_rule": "No time-based stop. Do not skip or weaken a validation gate to meet a schedule. Correctness and evidence take priority."
     },
     "estimands": {
       "A_SIGNAL_LEVEL_DIAGNOSTIC": {
@@ -246,6 +252,83 @@
       "required_for_pass": "For every NIFTY 50 constituent change used in 2018-2025 reconstruction, record the official announcement/publication date and the effective date separately; announcement date must precede effective date.",
       "evidence": "Official NSE/NSE Indices publication or circular; repository filename dates alone are not sufficient.",
       "failure": "Any unresolved announcement/effective-date mismatch blocks all downstream gates."
-    }
+    },
+    "final_preflight_required": true
+  },
+  "random5_inference": {
+    "statistic": "one_sided_mean_net_excess_return_per_quarter_vs_random5",
+    "p_value_cutoff": 0.1,
+    "plus_one_correction": true,
+    "draws": 100000,
+    "seed": 20261007,
+    "universe": "all_50_PIT_eligible_names_each_decision_date",
+    "without_replacement": true,
+    "no_buyability_prefilter": true,
+    "unbuyable_policy": "NO_REPLACEMENT_RETAIN_CASH",
+    "same_execution": true,
+    "same_slippage": true,
+    "same_costs": true,
+    "same_dividend_accounting": true,
+    "same_corporate_action_accounting": true
+  },
+  "estimand_cost_contract": {
+    "signal_level_fractional_notional": {
+      "percentage_or_notional_costs": "APPLY",
+      "slippage": "APPLY",
+      "dividends": "APPLY",
+      "corporate_actions": "APPLY",
+      "fixed_rupee_whole_share_transaction_charges": "EXCLUDE_AND_REPORT_SEPARATELY",
+      "rationale": "Fixed charges that are inherently tied to actual whole-share transactions cannot be meaningfully instantiated under fractional/notional execution; they remain fully included in Estimand B."
+    },
+    "retail_implementation": "ALL_ACTUAL_COSTS_APPLY"
+  },
+  "preflight_rules": {
+    "retained_name_rebalancing": "DIRECT_TARGET_RESIZE",
+    "retained_name_definition": "If a currently held security remains in the new Top-5, resize its position directly toward its frozen 20% target using whole shares; do not liquidate and repurchase solely because it was retained.",
+    "target_definition": "Target is 20% of portfolio NAV at the rebalance decision/execution basis defined by the implementation.",
+    "tie_break": "MOMENTUM_DESCENDING_THEN_SYMBOL_ASCENDING",
+    "nan_signal": "EXCLUDE_FROM_RANKING",
+    "missing_signal_price": "EXCLUDE_FROM_RANKING_AND_RECORD",
+    "missing_execution_open": "BLOCK_REBALANCE_AND_FAIL_CLOSED",
+    "rights_issue": "BLOCK_UNLESS_EXPLICITLY_REPRESENTABLE_IN_CANONICAL_LEDGER",
+    "cash_in_lieu": "CREDIT_ONLY_WHEN_AUTHORITATIVE_SOURCE_ESTABLISHES_ENTITLEMENT_AND_AMOUNT; OTHERWISE_FAIL_CLOSED",
+    "insufficient_eligible_names": "HOLD_ALL_ELIGIBLE_NAMES_AND_RETAIN_UNALLOCATED_TARGET_CAPITAL_AS_CASH",
+    "unsupported_corporate_action": "FAIL_CLOSED",
+    "dividend_timing": "EX_DATE_ENTITLEMENT_WITH_AUTHORITATIVE_RECORD/PAYMENT-DATE RECONCILIATION",
+    "p5_is_hard_gate": true
+  },
+  "primary_inference": {
+    "sample": "FULL_2018_2025",
+    "holdout_role": "DESCRIPTIVE_ONLY_2023_2025",
+    "holdout_approx_quarterly_decisions": 11,
+    "primary_estimand": "B_RETAIL_IMPLEMENTATION",
+    "economic_threshold_annualized_net_excess": 0.01,
+    "random5_p_value_cutoff": 0.1
+  },
+  "classification_final": {
+    "FAIL": [
+      "Estimand B annualized net excess return <= 0%",
+      "OR material data/implementation/corporate-action/accounting defect invalidates the result"
+    ],
+    "PASS": [
+      "Estimand B annualized net excess return >= 1%",
+      "AND Random-5 one-sided Monte Carlo p-value < 0.10",
+      "AND no material implementation/data/corporate-action/accounting defect",
+      "AND realistic costs and slippage are included"
+    ],
+    "INCONCLUSIVE": "All remaining cases; do not interpret as proof of no edge or proof of future profitability."
+  },
+  "effect_size_assumption": {
+    "status": "PRE_RUN_ASSUMPTION_TO_RECOMPUTE",
+    "approximate_annualized_effect_pct": 8,
+    "note": "The approximately 8% annual figure is a preliminary power/plausibility assumption, not an observed result. Recompute with the actual V6 engine before Run 1 and record the result without changing V6."
+  },
+  "cash_benchmark_sensitivity": {
+    "primary_cash_return_pct": 0,
+    "secondary": "Historically appropriate short-term cash/risk-free rate, preregistered separately and labeled sensitivity only."
+  },
+  "multiple_testing": {
+    "preregistered_configurations_count": 7,
+    "rule": "All seven count toward research-selection diagnostics if evaluated. No additional configuration becomes confirmatory after results are observed."
   }
 }
