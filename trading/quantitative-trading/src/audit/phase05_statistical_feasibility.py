@@ -44,7 +44,13 @@ def main():
     # The Top-5 feasibility builder therefore starts only when the required
     # formation endpoint exists inside the available calendar. Keep both
     # counts visible so the diagnostic cannot overstate statistical sample size.
-    eligible_dates=[d for d in calendar_quarter_ends if (d.year > start.year or d.month > start.month)]
+    all_trading_days=[]
+    with CAL.open("r",encoding="utf-8-sig",newline="") as f:
+        for r in csv.DictReader(f):
+            if r.get("is_trading_day","").lower()=="true":
+                d=date.fromisoformat(r["date"])
+                if start<=d<=end: all_trading_days.append(d)
+    eligible_dates=[d for d in calendar_quarter_ends if any(x>d for x in all_trading_days)]
     n=len(eligible_dates)
     vol=a.annual_vol if a.annual_vol is not None else float(cfg["annual_volatility_diagnostic"])
     sr=mdes_sharpe(n,float(cfg["alpha"]),float(cfg["power"]))
