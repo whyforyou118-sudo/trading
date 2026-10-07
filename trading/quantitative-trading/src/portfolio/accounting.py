@@ -207,7 +207,7 @@ def add_costs(a: CostBreakdown, b: CostBreakdown) -> CostBreakdown:
     )
 
 
-def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent]) -> PortfolioState:
+def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent], initial_positions: Mapping[str, int] | None = None) -> PortfolioState:
     """Replay a complete event ledger in deterministic date/priority order.
 
     Same-day priority is corporate action, rights entitlement, dividend, trade. Dividend events
@@ -216,7 +216,7 @@ def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent]) -> Portfoli
     position. Historical ingestion must reconcile ex/record/payment dates from
     authoritative source records before using this function.
     """
-    state = PortfolioState(cash=initial_cash)
+    state = PortfolioState(cash=initial_cash, positions=dict(initial_positions or {}))
     priority = {SecurityConversion: 0, ShareRatioAction: 0, RightsEntitlement: 0, Dividend: 1, Trade: 2}
     ordered = sorted(enumerate(events), key=lambda x: (x[1].date, priority[type(x[1])], x[0]))
     for _, event in ordered:
