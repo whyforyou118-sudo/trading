@@ -3,8 +3,15 @@ from __future__ import annotations
 import math
 import random
 from dataclasses import dataclass
-from statistics import mean as arithmetic_mean
 from typing import Sequence
+
+
+def arithmetic_mean(values):
+    values = list(values)
+    if not values:
+        raise ValueError("cannot calculate mean of empty sequence")
+    return sum(values) / len(values)
+
 
 @dataclass(frozen=True)
 class BootstrapResult:
