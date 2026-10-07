@@ -4,7 +4,7 @@
 
 Phase 0 (data feasibility and integrity) has passed locally under the deterministic gate.
 
-The repository is now in **Phase 0.5 — Research Feasibility**. No strategy performance backtest may begin until the Phase 0.5 evidence gate is complete.
+The Phase 0.5 evidence gate is complete. The repository is now in **Phase 1A — Implementation and Statistical Validation**. No Phase 1B performance interpretation may begin until the Phase 1A validation gate passes.
 
 No AI-generated PASS statement is evidence by itself.
 
@@ -24,7 +24,7 @@ No AI-generated PASS statement is evidence by itself.
 12. AI-generated code must be tested and reviewed.
 13. Deterministic data checks must be performed by Python/tests, not narrative judgment.
 14. Every important data transformation needs a reproducible test.
-15. Do not begin Phase 1A while the Phase 0 gate or Phase 0.5 evidence gate reports FAIL/BLOCKED.
+15. Do not begin Phase 1B performance interpretation while the Phase 0 or Phase 0.5 gates report FAIL/BLOCKED, or while required Phase 1A accounting/PIT validation reports FAIL/BLOCKED.
 16. Phase 0.5 feasibility calculations must not calculate strategy P&L or select conclusions based on profitability.
 17. Missing evidence is a blocker, not a reason to substitute a convenient third-party value.
 18. Economic thresholds proposed by reviewers are hypotheses, not universal pass/fail constants; any adopted threshold must be preregistered and justified.
@@ -43,7 +43,7 @@ No AI-generated PASS statement is evidence by itself.
 - Primary capital: INR 25,000.
 - Capital sensitivity: INR 20,000 / 50,000 / 100,000 / 500,000 / 1,000,000.
 - Primary slippage: 0.10%, with sensitivity analysis.
-- Benchmarks: NIFTY 50 TRI, NIFTY 50 Price Index, cash, and exposure-matched NIFTY 50 + cash.
+- Benchmarks: NIFTY 50 TRI, NIFTY 50 Price Index, cash, exposure-matched NIFTY 50 + cash, plus equal-weight NIFTY 50 as a secondary diagnostic.
 
 Do not change these rules merely because an early feasibility result is inconvenient.
 
@@ -97,3 +97,28 @@ The following are not permitted after performance results are inspected without 
 - removing an unsuccessful variant.
 
 Separate experiments are permitted only when preregistered and reported separately.
+
+
+## Phase 1A validation gate
+
+Before any Phase 1B performance interpretation, the following must PASS:
+
+- transaction-level portfolio accounting invariants;
+- cash/holdings/NAV reconciliation;
+- raw-price plus separate-dividend invariant;
+- corporate-action share/cash continuity tests;
+- whole-share and no-oversell enforcement;
+- full strategy decision-date PIT consistency;
+- development-only Rank IC/top-bottom-decile implementation;
+- date-stratified Top-5 versus random-5 permutation implementation;
+- reproducibility manifest/config/data hash capture.
+
+The Phase 1A gate validates implementation and inference machinery. It is not an alpha verdict.
+
+The preregistered Phase 1A controls are authoritative in:
+`config/phase1a_preregistration.json`
+
+The freeze/review documentation is in:
+`docs/BLUEPRINT_V6_AMENDMENTS.md`
+and
+`docs/V6_INDEPENDENT_ADVERSARIAL_REVIEW.md`

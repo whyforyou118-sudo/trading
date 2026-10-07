@@ -17,19 +17,12 @@ CANDIDATES = [
     ROOT / "data/reference/nifty50_membership_transitions.csv",
 ]
 
-# Known official NSE evidence anchors. These are references to official
-# publications, not assertions that the local ledger matches them.
 OFFICIAL_EVIDENCE = [
-    ("2020-03-19", "YESBANK", "EXCLUSION",
-     "https://nsearchives.nseindia.com/web/sites/default/files/2020-02/ind_prs18022020.pdf"),
-    ("2021-03-31", "", "NIFTY50_REVIEW",
-     "https://nsearchives.nseindia.com/web/sites/default/files/2021-02/ind_prs23022021.pdf"),
-    ("2022-09-30", "ADANIENT", "INCLUSION",
-     "https://nsearchives.nseindia.com/web/sites/default/files/2022-09/ind_prs01092022.pdf"),
-    ("2023-07-13", "HDFC", "HDFC_EXCLUSION_AMALGAMATION",
-     "https://nsearchives.nseindia.com/web/sites/default/files/2023-07/ind_prs04072023.pdf"),
-    ("2024-03-28", "SHRIRAMFIN", "INCLUSION",
-     "https://www.nseindia.com/mediacoverage/nse-replacements-in-indices-wef-march-28-2024"),
+    ("2020-03-19", "YESBANK", "EXCLUSION", "https://nsearchives.nseindia.com/web/sites/default/files/2020-02/ind_prs18022020.pdf"),
+    ("2021-03-31", "", "NIFTY50_REVIEW", "https://nsearchives.nseindia.com/web/sites/default/files/2021-02/ind_prs23022021.pdf"),
+    ("2022-09-30", "ADANIENT", "INCLUSION", "https://nsearchives.nseindia.com/web/sites/default/files/2022-09/ind_prs01092022.pdf"),
+    ("2023-07-13", "HDFC", "HDFC_EXCLUSION_AMALGAMATION", "https://nsearchives.nseindia.com/web/sites/default/files/2023-07/ind_prs04072023.pdf"),
+    ("2024-03-28", "SHRIRAMFIN", "INCLUSION", "https://www.nseindia.com/mediacoverage/nse-replacements-in-indices-wef-march-28-2024"),
 ]
 
 def read(path):
@@ -45,11 +38,11 @@ def locate():
 
 def normalize(row):
     return {
-        "effective_date": row.get("effective_date","").strip(),
-        "symbol": row.get("symbol","").strip(),
-        "action": row.get("action","").strip().upper(),
-        "company_name": row.get("company_name","").strip(),
-        "isin": row.get("isin","").strip(),
+        "effective_date": row.get("effective_date", "").strip(),
+        "symbol": row.get("symbol", "").strip(),
+        "action": row.get("action", "").strip().upper(),
+        "company_name": row.get("company_name", "").strip(),
+        "isin": row.get("isin", "").strip(),
     }
 
 def main():
@@ -64,10 +57,9 @@ def main():
             if r["effective_date"] == d
             and (not symbol or r["symbol"] == symbol)
         ]
-        # A match is only a candidate for manual reconciliation. It is NOT
-        # marked PASS because the official document must be checked for the
-        # exact effective date/action and the local state transition.
-        local_matches = "|".join([m["symbol"] + ":" + m["action"] + ":" + m["isin"] for m in matches])
+        local_matches = "|".join(
+            m["symbol"] + ":" + m["action"] + ":" + m["isin"] for m in matches
+        )
         required_matches = 2 if d == "2021-03-31" else 1
         status = "PASS" if len(matches) >= required_matches else "FAIL"
         evidence = (
@@ -87,10 +79,11 @@ def main():
             "evidence": evidence,
         })
 
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", encoding="utf-8", newline="") as f:
         fields = [
-            "effective_date","check","status","official_event_type","security",
-            "local_match_count","local_matches","official_source_reference","evidence"
+            "effective_date", "check", "status", "official_event_type", "security",
+            "local_match_count", "local_matches", "official_source_reference", "evidence"
         ]
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
@@ -106,7 +99,9 @@ def main():
             f'| local_match_count={row["local_match_count"]} '
             f'| local_matches={row["local_matches"] or "NONE"}'
         )
-    print(f"PASS rows: {sum(r["status"] == "PASS" for r in rows)}; FAIL rows: {sum(r["status"] == "FAIL" for r in rows)}")
+    pass_rows = sum(r["status"] == "PASS" for r in rows)
+    fail_rows = sum(r["status"] == "FAIL" for r in rows)
+    print(f"PASS rows: {pass_rows}; FAIL rows: {fail_rows}")
     print("Official NSE evidence references are recorded for each sampled event; no PASS is based on a non-official source.")
     return 0
 
