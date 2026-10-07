@@ -30,7 +30,7 @@ def make_session():
             "Referer":TRI_REFERER,
             "User-Agent":TRI_UA,
         },
-        follow_redirects=False,
+        follow_redirects=True,
         timeout=120.0,
     )
 
@@ -38,8 +38,8 @@ def request_chunk(session,start,end):
     # The ASP.NET endpoint expects cinfo as a JSON-like string with
     # single-quoted fields, not a nested JSON object.
     cinfo=("{'name':'NIFTY 50',"
-           f"'startDate':'{start:%d %b %Y}',"
-           f"'endDate':'{end:%d %b %Y}',"
+           f"'startDate':'{start:%d-%b-%Y}',"
+           f"'endDate':'{end:%d-%b-%Y}',"
            "'indexName':'NIFTY 50'}")
     payload={"cinfo":cinfo}
     data=json.dumps(payload).encode()
