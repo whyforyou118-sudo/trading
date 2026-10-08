@@ -9,7 +9,10 @@ from audit.phase1b_britannia_path_relevance import build_path_relevance_report, 
 
 def test_frozen_audit_detects_signal_window_overlap_even_without_a_britannia_holding():
     rows = _load_rows(ROOT / "audits" / "phase1b_selection_audit.csv")
-    coverage = _load_rows(ROOT / "audits" / "phase1b_selection_coverage.csv")
+    coverage = _load_rows(
+        ROOT / "audits" / "phase1b_selection_coverage.csv",
+        {"decision_date", "formation_start", "formation_end"},
+    )
     report = build_path_relevance_report(rows, coverage)
 
     assert report["run1_authorized"] is False
