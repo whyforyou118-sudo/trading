@@ -51,6 +51,7 @@ def _load_rows(path: Path) -> list[dict[str, str]]:
 
 
 def build_path_relevance_report(rows: Iterable[Mapping[str, str]]) -> dict:
+    rows = list(rows)
     selections = [
         row for row in rows
         if row.get("selection_status") == "PASS"
