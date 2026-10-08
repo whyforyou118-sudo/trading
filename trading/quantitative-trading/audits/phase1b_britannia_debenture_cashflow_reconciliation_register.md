@@ -33,12 +33,15 @@
 - Allotment / deemed issue date: 3 June 2021.
 - First listing/trading date: 20 July 2021.
 - First-year interest: issuer annual-report disclosure says paid on 3 June 2022 to holders on record date 27 May 2022.
-- Second-year interest: CDSL's corporate-bond database records record date 17 May 2023, due date and actual payment date 3 June 2023, and aggregate interest paid of ₹38,42,00,000 (displayed as ₹384,200,000). The page's amount is rounded at issue level, so it confirms the payment event but does not establish the exact paid amount per debenture. The contractual simple annual coupon calculation is ₹29 × 5.5% = ₹1.595 for a standard 365-day year; use ₹1.595 in the ledger only after reconciling the governing terms and issuer payment notice, and do not treat the rounded aggregate as exact per-unit evidence.
+- Second-year interest: CDSL records record date 17 May 2023, due/actual payment date 3 June 2023, and aggregate interest paid ₹38.42 crore. This confirms the event date, but the aggregate is rounded and is not exact per-debenture evidence.
+- Third-year interest: the issuer's 3 June 2024 notice records record date 22 May 2024, due/actual payment date 3 June 2024, and interest of ₹38.42 crore; the issuer confirms principal redemption on the same date. The amount is rounded at issue level, not exact per-debenture evidence.
+- **Day-count source conflict:** CDSL's database labels the convention Actual/365, while the issue information memorandum says Actual/Actual and specifies actual days in a 365/366-day year. Do not select one silently. Resolve this against the executed debenture trust deed / definitive issue terms and reconcile the issuer's payment calculations before setting coupon amounts.
 - Third-year interest and redemption: due/remitted on 3 June 2024; principal is ₹29 per debenture. The 2024–25 annual report says ₹7,47,549 of third-year interest and ₹1,46,62,690 of redemption amount relating to the issue were remitted to IEPF on 3 June 2024; these are unclaimed aggregate amounts, not the total issue-wide coupon.
-- First-year standard annual coupon calculation: ₹29 × 5.5% = ₹1.595 per debenture for a 365-day period; exact payment-level reconciliation remains pending.
-- Exact per-debenture amount for each payment, especially the third-year leap-year period: **PENDING PRIMARY-SOURCE RECONCILIATION**.
+- Exact per-debenture coupon amount for each payment: **PENDING PRIMARY-SOURCE RECONCILIATION**. The rounded aggregate is consistent with a nominal ₹1.595 per debenture but is not enough to establish the actual amount or settle the day-count convention.
 - Primary references:
-  - CDSL corporate-bond database, including payment status for 3 June 2023: https://www.cdslindia.com/CorporateBond/CorpBondDatabase.aspx?ISIN=INE216A08027
+  - CDSL corporate-bond database, including payment status for 3 June 2023 and its stated Actual/365 convention: https://www.cdslindia.com/CorporateBond/CorpBondDatabase.aspx?ISIN=INE216A08027
+  - Issuer's 3 June 2024 payment confirmation, including 22 May 2024 record date: https://media.britannia.co.in/Regulation_57_3rd_Year_Interest_and_Redemption_of_Bonus_Debentures_978c760df3.pdf
+  - Issue information memorandum stating Actual/Actual basis: https://www.bseindia.com/downloads/ipo/2021714135249IM%20Britannia.pdf
   - 2022–23 annual report (first-year interest paid 3 June 2022): https://nsearchives.nseindia.com/corporate/BRITANNIA_03082023000240_NSEAnnualReportSigned.pdf
   - 2023–24 annual report (third-year due date): https://nsearchives.nseindia.com/annual_reports/AR_24587_BRITANNIA_2023_2024_1907202401243.pdf
   - 2024–25 annual-report notice (unclaimed third-year interest/redemption remitted to IEPF): https://nsearchives.nseindia.com/corporate/BRITANNIA1_19072025235052_Intimation_Signed.pdf
