@@ -81,6 +81,16 @@ def _verified_adjustment_inputs():
             "formation_end": "2019-11-29",
         },
         {
+            "decision_date": "2020-03-31",
+            "formation_start": "2019-02-28",
+            "formation_end": "2020-02-28",
+        },
+        {
+            "decision_date": "2020-06-30",
+            "formation_start": "2019-05-31",
+            "formation_end": "2020-05-29",
+        },
+        {
             "decision_date": "2021-06-30",
             "formation_start": "2020-05-29",
             "formation_end": "2021-05-31",
@@ -90,10 +100,24 @@ def _verified_adjustment_inputs():
             "formation_start": "2020-08-31",
             "formation_end": "2021-08-31",
         },
+        {
+            "decision_date": "2021-12-31",
+            "formation_start": "2020-11-27",
+            "formation_end": "2021-11-30",
+        },
+        {
+            "decision_date": "2022-03-31",
+            "formation_start": "2021-02-26",
+            "formation_end": "2022-02-28",
+        },
     ]
     event_windows = {
-        "BRITANNIA_2019_BONUS_DEBENTURE": ["2019-08-30", "2019-11-29"],
-        "BRITANNIA_2021_BONUS_DEBENTURE": ["2021-05-31", "2021-08-31"],
+        "BRITANNIA_2019_BONUS_DEBENTURE": [
+            "2019-08-30", "2019-11-29", "2020-02-28", "2020-05-29"
+        ],
+        "BRITANNIA_2021_BONUS_DEBENTURE": [
+            "2021-05-31", "2021-08-31", "2021-11-30", "2022-02-28"
+        ],
     }
     adjustment_rows = [
         {
