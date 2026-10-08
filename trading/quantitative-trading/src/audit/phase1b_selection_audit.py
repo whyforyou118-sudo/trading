@@ -17,7 +17,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from data.prices import ManifestPriceStore
-from strategy.momentum import Member
+from strategy.momentum import Member, quarterly_decision_dates
 from strategy.selection import build_quarterly_selection_audit
 
 
@@ -69,6 +69,38 @@ def main() -> int:
     events = read_csv(events_path)
     store = ManifestPriceStore.from_manifest(price_root, manifest_path)
 
+    # Reuse the frozen Phase 1A decision dates; never invent a new final
+    # decision just because the calendar contains the last day of 2025.
+    frozen_decision_dates = {
+        date.fromisoformat(row["decision_date"])
+        for row in read_csv(pit_path)
+    }
+    generated_decision_dates = set(
+        quarterly_decision_dates(sessions, date(2018, 1, 1), date(2025, 12, 31))
+    )
+    missing_dates = sorted(frozen_decision_dates - generated_decision_dates)
+    extra_dates = sorted(generated_decision_dates - frozen_decision_dates)
+
+    if missing_dates:
+        print("BLOCKED: frozen Phase 1A decision dates missing from generated calendar:")
+        print("\\n".join(d.isoformat() for d in missing_dates))
+        return 2
+
+    # An extra date is acceptable only when it is the terminal calendar date
+    # and has no following session, so it cannot be executed within the data.
+    terminal_unexecutable_extras = [
+        d for d in extra_dates if not any(session > d for session in sessions)
+    ]
+    unexpected_extras = sorted(set(extra_dates) - set(terminal_unexecutable_extras))
+    if unexpected_extras:
+        print("BLOCKED: generated decision dates differ from frozen Phase 1A scope:")
+        print("Unexpected extra dates:")
+        print("\\n".join(d.isoformat() for d in unexpected_extras))
+        return 2
+    if terminal_unexecutable_extras:
+        print("INFO: excluding terminal decision date(s) without a next trading session:")
+        print("\\n".join(d.isoformat() for d in terminal_unexecutable_extras))
+
     selections = build_quarterly_selection_audit(
         trading_dates=sessions,
         price_store=store,
@@ -80,6 +112,7 @@ def main() -> int:
         formation_months=12,
         skip_months=1,
         holdings=5,
+        decision_dates=sorted(frozen_decision_dates),
     )
 
     selection_rows: list[dict[str, object]] = []
