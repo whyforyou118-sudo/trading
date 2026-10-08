@@ -11,14 +11,16 @@ Do not wait for an email response before continuing Phase 1 implementation. Exte
 
 The frozen V6 blueprint requires path-conditional corporate-action handling. The Britannia debenture coupon cashflows remain unresolved for a general-purpose historical accounting ledger; they must not be fabricated or represented as verified. However, whether those amounts block the frozen V6 performance run should be decided by an automated path-relevance audit, not by assuming every event affects every strategy.
 
-The new audit script `src/audit/phase1b_britannia_path_relevance.py` checks the frozen Phase 1B selection audit for:
-1. Any BRITANNIA execution position on or before either debenture ex-date.
-2. Either ex-date falling inside any quarterly decision's 12-month formation window after the 1-month skip, including decisions where BRITANNIA was not selected.
-3. An explicit report that does not authorize Run 1.
+The signal layer and audits are versioned separately:
+- `src/strategy/corporate_action_signal.py` implements point-in-time signal-price adjustment without modifying raw execution prices.
+- `src/audit/phase1b_britannia_signal_adjustment_audit.py` compares raw momentum, the provisional face-value primary policy, and the listing-only sensitivity for all frozen decision dates. It must not overwrite the existing raw selection evidence.
+- `src/audit/phase1b_britannia_path_relevance.py` checks entitlement holdings and every overlapping formation window. An overlap is acceptable only when the primary adjustment is evidenced for that exact formation end, the listing-only sensitivity passes, and the recomputed raw Top-5 still matches the existing raw selection artifact.
 
-If the script passes on the frozen selection artifact, its conclusion is limited: the unresolved coupon amounts and valuation events are path-conditionally irrelevant to the frozen V6 primary strategy because no eligible BRITANNIA position exists at entitlement and neither ex-date overlaps any quarterly momentum formation window. The audit must check all decision dates, not just dates when BRITANNIA was selected. This does **not** validate the coupon values, complete the generic accounting ledger, or authorize performance by itself.
+The signal adjustment factor is `raw parent equity close on ex-date / (raw parent equity close on ex-date + distribution value)`. The primary policy uses the versioned provisional face values (₹30 and ₹29), which are assumptions and not verified fair values. The listing-only sensitivity uses the exact raw debenture close by ISIN on the first tradable date and does not use that quote before it becomes observable.
 
-If the audit fails, the Britannia event treatment remains a performance blocker and must be resolved before Run 1.
+The path audit must check all decision dates, not just dates when BRITANNIA was selected. If the new signal audit and path audit pass, the conclusion is limited to this: no Britannia debenture entitlement cashflow is owed by the frozen V6 portfolio at those ex-dates, and the detected signal-window effects have an explicit, point-in-time adjustment with a required listing-only sensitivity. This does **not** validate the debenture's fair value, verify coupon values, complete the generic accounting ledger, or authorize performance by itself.
+
+If the signal audit or path audit fails, the Britannia event treatment remains a performance blocker and must be resolved before Run 1.
 
 ## Required verification
 
