@@ -140,3 +140,60 @@ def test_raw_instrument_close_lookup_requires_exactly_one_matching_isin_row(tmp_
         load_raw_instrument_close_by_isin(
             path, "INE216A07052", date(2019, 10, 9)
         )
+
+
+
+def test_selection_adjuster_does_not_change_raw_execution_open():
+    from strategy.momentum import Member
+    from strategy.selection import build_quarterly_selection_audit
+
+    dates = [
+        date(2020, 5, 29),
+        date(2021, 5, 31),
+        date(2021, 6, 30),
+        date(2021, 7, 1),
+    ]
+
+    class FakePriceStore:
+        def __init__(self):
+            self.execution_open = 100.0
+
+        def prices(self, trading_date):
+            if trading_date == date(2020, 5, 29):
+                return {"BRITANNIA": point("2020-05-29", 100.0)}
+            if trading_date == date(2021, 5, 31):
+                return {"BRITANNIA": point("2021-05-31", 90.0)}
+            if trading_date == date(2021, 7, 1):
+                return {
+                    "BRITANNIA": SimpleNamespace(
+                        date=date(2021, 7, 1),
+                        close=101.0,
+                        open=self.execution_open,
+                    )
+                }
+            raise AssertionError(f"unexpected price request: {trading_date}")
+
+    store = FakePriceStore()
+
+    def adjuster(formation_end, start_prices, end_prices):
+        return (
+            {"BRITANNIA": point("2020-05-29", 95.0)},
+            end_prices,
+        )
+
+    result = build_quarterly_selection_audit(
+        trading_dates=dates,
+        price_store=store,
+        baseline=[Member("BRITANNIA", "Britannia Industries", "INE216A07052")],
+        transitions=[],
+        identity_events=[],
+        start=date(2021, 6, 30),
+        end=date(2021, 6, 30),
+        holdings=1,
+        decision_dates=[date(2021, 6, 30)],
+        signal_price_adjuster=adjuster,
+    )
+
+    assert result[0].selected_symbols == ("BRITANNIA",)
+    assert result[0].missing_execution_opens == ()
+    assert store.execution_open == pytest.approx(100.0)
