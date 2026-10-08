@@ -49,7 +49,7 @@ def test_engine_sells_before_buys_and_resizes_retained_name():
     result = execute_rebalance(
         state=state, plan=plan, cost_model=COSTS,
         execution_date=date(2025,4,1),
-        mark_prices={"AAA":100,"BBB":250},
+        mark_prices={"AAA":100,"BBB":250,"OLD":100},
     )
     assert result.state.positions["AAA"] == 125
     assert result.state.positions["BBB"] == 50
@@ -107,12 +107,12 @@ def test_engine_nav_reconciles_to_cash_plus_marked_positions():
     plan = plan_rebalance(
         decision_date=date(2025,3,31), execution_date=date(2025,4,1),
         capital=25000, starting_cash=25000, starting_positions={},
-        ranked_symbols=[("AAA",1)], execution_opens={"AAA":25000},
+        ranked_symbols=[("AAA",1)], execution_opens={"AAA":24000},
         holdings=1, target_weight=1.0,
     )
     result = execute_rebalance(
         state=state, plan=plan, cost_model=COSTS,
-        execution_date=date(2025,4,1), mark_prices={"AAA":25000},
+        execution_date=date(2025,4,1), mark_prices={"AAA":24000},
     )
-    expected = result.state.cash + result.state.positions["AAA"] * 25000
+    expected = result.state.cash + result.state.positions["AAA"] * 24000
     assert result.ending_nav == pytest.approx(expected)
