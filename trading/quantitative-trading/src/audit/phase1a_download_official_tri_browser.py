@@ -25,9 +25,9 @@ TARGETS = {
     "NIFTY50 EQUAL WEIGHT": ("Strategy Indices", "nifty50_equal_weight_tri.csv"),
 }
 
-RETURN_TYPE_ID = "ddlHistoricalreturntypee"
-RETURN_SUBINDEX_ID = "ddlHistoricalreturntypeeSubindex"
-RETURN_INDEX_ID = "ddlHistoricalreturntypeeindex"
+RETURN_TYPE_ID = "ddlHistoricaltypee"
+RETURN_SUBINDEX_ID = "ddlHistoricaltypeeSubindex"
+RETURN_INDEX_ID = "ddlHistoricaltypeeindex"
 
 
 def _activate_report(page, report_name: str) -> None:
