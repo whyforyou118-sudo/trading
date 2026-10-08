@@ -115,3 +115,19 @@ These are practical primary-source contacts for requesting the executed trust de
 ### Gate remains unchanged
 
 No exact per-debenture coupon values have been approved for event-ledger ingestion in this pass. The 2021 Actual/365 versus Actual/Actual conflict remains unresolved. Continue to block historical performance until definitive terms and payment calculations reconcile, including whether the final coupon is separately paid or bundled with redemption.
+
+
+## 7. Quantitative coupon cross-check against the issuer's rounded aggregate (9 October 2026)
+
+A useful arithmetic cross-check is now available for the 2021 ₹29 issue (24,08,68,296 debentures; coupon 5.5%; annual dates 3 June 2022, 2023 and 2024).
+
+- Nominal annual coupon per debenture: ₹29 × 5.5% = ₹1.595.
+- For the 3 June 2023 to 3 June 2024 coupon period, the calendar interval includes 29 February 2024 and has 366 elapsed days.
+- Applying the information memorandum's stated Actual/Actual method for a 366-day year gives ₹1.595 per debenture and ₹38,41,84,932.12 across 24,08,68,296 debentures, which rounds to ₹38.42 crore.
+- Applying a simple Actual/365 multiplier to that 366-day interval instead gives approximately ₹38.52375 crore, which rounds to ₹38.52 crore—not the issuer's reported ₹38.42 crore aggregate.
+
+Sources for inputs: issue quantity, face value, rate and Actual/365 database metadata in CDSL's record https://www.cdslindia.com/CorporateBond/CorpBondDatabase.aspx?ISIN=INE216A08027; annual coupon dates and Actual/Actual terms in the issuer's information memorandum https://www.bseindia.com/downloads/ipo/2021714135249IM%20Britannia.pdf; 3 June 2024 rounded aggregate in the issuer's payment notice https://media.britannia.co.in/Regulation_57_3rd_Year_Interest_and_Redemption_of_Bonus_Debentures_978c760df3.pdf.
+
+**Interpretation:** The 2024 aggregate is quantitatively consistent with the disclosed Actual/Actual terms and inconsistent with applying Actual/365 to the 366-day interval. This is strong corroborative evidence that the CDSL Actual/365 field may be generic or erroneous for this issue. It is not, by itself, a substitute for the executed trust deed or an exact payment advice; retain the formal-term confirmation requirement and do not silently overwrite the source conflict.
+
+This cross-check is for the 2021 issue only. It does not establish exact per-debenture amounts for the 2019 issue's coupons.
