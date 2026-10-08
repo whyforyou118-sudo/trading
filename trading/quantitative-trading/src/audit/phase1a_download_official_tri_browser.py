@@ -177,16 +177,13 @@ def fetch_with_ui(index_name: str, subindex: str, start: dt.date, end: dt.date) 
             page.goto(PAGE_URL, wait_until="domcontentloaded", timeout=90000)
             page.wait_for_timeout(6000)
 
-            heading = page.get_by_text("Total returns Index Values", exact=True)
-            if heading.count():
-                # The current NSE page renders a hidden duplicate of this
-                # accordion label. The last matching node is the visible tab.
-                target = heading.last
-                try:
-                    target.click(timeout=5000)
-                except Exception:
-                    target.evaluate("(e) => e.click()")
-                page.wait_for_timeout(1500)
+            # The official page currently opens the "Total returns Index Values"
+            # panel by default. Do not click the duplicate accordion label: NSE renders
+            # a hidden copy of that text and a click can target the wrong node.
+            # Drive the actual form controls shown in the live UI instead.
+            page.locator(f"#{RETURN_TYPE_ID}").wait_for(state="visible", timeout=30000)
+            page.locator(f"#{RETURN_SUBINDEX_ID}").wait_for(state="visible", timeout=30000)
+            page.locator(f"#{RETURN_INDEX_ID}").wait_for(state="visible", timeout=30000)
             _select_by_text(page, f"#{RETURN_TYPE_ID}", "Equity")
             page.wait_for_timeout(1500)
             _select_by_text(page, f"#{RETURN_SUBINDEX_ID}", subindex)
