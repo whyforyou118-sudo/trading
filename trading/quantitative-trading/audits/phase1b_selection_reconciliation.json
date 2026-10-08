@@ -1,0 +1,14 @@
+{
+  "audit_type": "SIGNAL_SELECTION_ONLY_NOT_PERFORMANCE",
+  "quarterly_decision_count": 31,
+  "blocked_decision_count": 0,
+  "reconciliation_rows": 62,
+  "mismatch_count": 0,
+  "status": "PASS",
+  "run1_authorized": false,
+  "outputs": [
+    "audits\\phase1b_selection_audit.csv",
+    "audits\\phase1b_selection_coverage.csv",
+    "audits\\phase1b_selection_reconciliation.csv"
+  ]
+}
