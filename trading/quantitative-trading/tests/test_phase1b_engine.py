@@ -43,13 +43,13 @@ def test_engine_sells_before_buys_and_resizes_retained_name():
         capital=8000, starting_cash=5000,
         starting_positions={"AAA":20,"OLD":10},
         ranked_symbols=[("AAA",1),("BBB",2)],
-        execution_opens={"AAA":100,"BBB":250,"OLD":100},
+        execution_opens={"AAA":100,"BBB":245,"OLD":100},
         holdings=2, target_weight=0.5,
     )
     result = execute_rebalance(
         state=state, plan=plan, cost_model=COSTS,
         execution_date=date(2025,4,1),
-        mark_prices={"AAA":100,"BBB":250,"OLD":100},
+        mark_prices={"AAA":100,"BBB":245,"OLD":100},
     )
     assert result.state.positions["AAA"] == 40
     assert result.state.positions["BBB"] == 16
