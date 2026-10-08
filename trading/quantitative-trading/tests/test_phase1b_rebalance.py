@@ -15,7 +15,8 @@ def test_new_selection_buys_whole_share_targets():
         execution_opens={"AAA":100,"BBB":250,"CCC":500,"DDD":1000,"EEE":2000},
     )
     assert [t.shares for t in p.trades] == [50,20,10,5,2]
-    assert p.retained_unallocated_cash == 0
+    # Whole-share targets leave residual cash when a target cannot be filled exactly.
+    assert p.retained_unallocated_cash == 1000
 
 
 def test_unbuyable_name_is_retained_as_cash_without_replacement():
