@@ -90,6 +90,61 @@ def load_bhavcopy(path: Path) -> Mapping[str, PriceBar]:
     return _read_csv_bytes(raw, path)
 
 
+def load_raw_instrument_close_by_isin(
+    path: Path,
+    isin: str,
+    expected_date: date,
+) -> float:
+    """Read one instrument's unadjusted close by ISIN, including non-EQ series.
+
+    Unlike load_bhavcopy(), this deliberately does not filter to the equity
+    series. It is intended for auditable corporate-action sensitivity inputs,
+    not for equity execution prices.
+    """
+    if path.suffix.lower() == ".zip":
+        with zipfile.ZipFile(path) as archive:
+            names = [n for n in archive.namelist() if n.lower().endswith(".csv")]
+            if len(names) != 1:
+                raise ValueError(
+                    f"expected exactly one CSV in {path.name}, found {len(names)}"
+                )
+            raw = archive.read(names[0])
+    else:
+        raw = path.read_bytes()
+
+    reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
+    fields = set(reader.fieldnames or [])
+    if {"ISIN", "CLOSE", "TIMESTAMP"}.issubset(fields):
+        isin_col, close_col, date_col = "ISIN", "CLOSE", "TIMESTAMP"
+    elif {"ISIN", "ClsPric", "TradDt"}.issubset(fields):
+        isin_col, close_col, date_col = "ISIN", "ClsPric", "TradDt"
+    else:
+        raise ValueError(f"unknown NSE raw instrument-price schema: {path}")
+
+    matches: list[float] = []
+    for row in reader:
+        if (row.get(isin_col) or "").strip().upper() != isin.strip().upper():
+            continue
+        try:
+            row_date = _parse_date(row.get(date_col) or "")
+            close = float(row.get(close_col) or "")
+        except (TypeError, ValueError):
+            continue
+        if row_date == expected_date:
+            if close <= 0:
+                raise ValueError(
+                    f"non-positive raw close for ISIN {isin} on {expected_date}"
+                )
+            matches.append(close)
+
+    if len(matches) != 1:
+        raise ValueError(
+            f"expected exactly one raw close for ISIN {isin} on {expected_date}; "
+            f"found {len(matches)} in {path.name}"
+        )
+    return matches[0]
+
+
 class ManifestPriceStore:
     """Lazy, deterministic price access backed by the repository manifest."""
 
