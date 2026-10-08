@@ -30,6 +30,21 @@ RETURN_SUBINDEX_ID = "ddlHistoricalreturntypeeSubindex"
 RETURN_INDEX_ID = "ddlHistoricalreturntypeeindex"
 
 
+def _activate_report(page, report_name: str) -> None:
+    """Activate one report from the visible NSE Historical Data Reports menu."""
+    matches = page.get_by_text(report_name, exact=True)
+    if not matches.count():
+        raise RuntimeError(f"NSE report option not found: {report_name!r}")
+    # NSE currently renders duplicate menu labels; the last matching item is
+    # the visible menu entry in the live Historical Data Reports dropdown.
+    target = matches.last
+    try:
+        target.click(timeout=5000)
+    except Exception:
+        target.evaluate("(e) => e.click()")
+    page.wait_for_timeout(1500)
+
+
 def _options(page, selector: str) -> list[dict]:
     return page.locator(selector).locator("option").evaluate_all(
         "(els) => els.map(e => ({text:(e.textContent||'').trim(), value:e.value}))"
@@ -177,11 +192,14 @@ def fetch_with_ui(index_name: str, subindex: str, start: dt.date, end: dt.date) 
             page.goto(PAGE_URL, wait_until="domcontentloaded", timeout=90000)
             page.wait_for_timeout(6000)
 
-            # The official page currently opens the "Total returns Index Values"
-            # panel by default. Do not click the duplicate accordion label: NSE renders
-            # a hidden copy of that text and a click can target the wrong node.
-            # Drive the actual form controls shown in the live UI instead.
-            page.locator(f"#{RETURN_TYPE_ID}").wait_for(state="visible", timeout=30000)
+            # Follow the real visible menu hierarchy first. The live NSE page
+            # exposes "Historical Index Data" as the first report in this menu.
+            _activate_report(page, "Historical Index Data")
+            print("Activated official NSE report: Historical Index Data")
+            # We intentionally stop relying on the hidden TRI controls here.
+            # The next UI step will be mapped from the live form before we
+            # reconnect this navigation to the frozen TRI acquisition path.
+            page.locator("select:visible").first.wait_for(state="visible", timeout=30000)
             page.locator(f"#{RETURN_SUBINDEX_ID}").wait_for(state="visible", timeout=30000)
             page.locator(f"#{RETURN_INDEX_ID}").wait_for(state="visible", timeout=30000)
             _select_by_text(page, f"#{RETURN_TYPE_ID}", "Equity")
