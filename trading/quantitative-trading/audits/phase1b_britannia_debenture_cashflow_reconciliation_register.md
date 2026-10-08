@@ -149,3 +149,30 @@ This is an additional reconciliation exception: the scheduled coupon/redemption 
 ### Research result
 
 The public information memorandum and annual-report disclosures establish issue terms and payment chronology, but this search pass did not find an executed trust deed or an issuer/registrar payment advice stating exact per-debenture coupon cash for all three periods. IDBI Trusteeship Services Limited (trustee) and KFin Technologies (registrar) remain the most direct route to resolve the outstanding evidence. No event-ledger values were changed by this research update.
+
+
+## 9. External evidence request is now the critical path (9 October 2026)
+
+### Publicly disclosed contact route
+
+Britannia's official investor-relations page identifies KFin Technologies Limited as Registrar and Transfer Agent:
+- Email: einward.ris@kfintech.com
+- Telephone: +91 40 6716 2222
+- Toll-free: 1800 309 4001
+- Investor relations: investorrelations@britindia.com
+- Official contact page: https://www.britannia.co.in/search?q=britannia+industries
+
+Britannia's 2021–22 annual report identifies IDBI Trusteeship Services Limited as debenture trustee for the bonus-debenture issues and publishes trustee contact details, including itsl@idbitrustee.com. Source: https://media.britannia.co.in/Annual_Report_2021_22_6eb6f3ae88.pdf
+
+### Request needed to close the gate
+
+Request certified copies or written confirmation for each ISIN:
+1. executed Debenture Trust Deed and all schedules/amendments, especially day-count, interest-period, business-day and early-redemption clauses;
+2. exact per-debenture interest paid and interest-period dates for each coupon;
+3. for the 2019 instrument, the basis for paying final interest and ₹30 principal on 26 August 2022 when the originally disclosed anniversary date was 28 August 2022, including the accrual cut-off date;
+4. for the 2021 instrument, the operative day-count rule and exact coupon computation for the period containing 29 February 2024;
+5. explicit confirmation whether final interest was paid separately or included in redemption proceeds, so the ledger cannot double count it.
+
+Keep personal holder-level data out of the project repository. If the issuer/trustee requires proof of holding, use a private channel and redact unrelated personal information before storing any evidence.
+
+**Status:** waiting for external primary evidence. The public-source research is not a substitute for the requested definitive terms/payment calculation. Do not manufacture a coupon ledger or change the historical performance gate while waiting.
