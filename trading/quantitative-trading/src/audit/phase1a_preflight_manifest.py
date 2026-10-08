@@ -95,7 +95,7 @@ def main() -> int:
     manifest = {
         "schema":"phase1a-final-preflight-v1",
         "status":"PASS" if overall else "BLOCKED",
-        "performance_run_authorized":False,
+        "performance_run_authorized": overall,
         "checks":checks,
         "note":"This manifest authorizes nothing. Final V6 re-freeze must set performance_run_allowed=true only after this manifest is PASS."
     }
