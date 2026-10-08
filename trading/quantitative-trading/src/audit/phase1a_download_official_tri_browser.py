@@ -179,9 +179,14 @@ def fetch_with_ui(index_name: str, subindex: str, start: dt.date, end: dt.date) 
 
             heading = page.get_by_text("Total returns Index Values", exact=True)
             if heading.count():
-                heading.first.click(force=True)
-                page.wait_for_timeout(1000)
-
+                # The current NSE page renders a hidden duplicate of this
+                # accordion label. The last matching node is the visible tab.
+                target = heading.last
+                try:
+                    target.click(timeout=5000)
+                except Exception:
+                    target.evaluate("(e) => e.click()")
+                page.wait_for_timeout(1500)
             _select_by_text(page, f"#{RETURN_TYPE_ID}", "Equity")
             page.wait_for_timeout(1500)
             _select_by_text(page, f"#{RETURN_SUBINDEX_ID}", subindex)
