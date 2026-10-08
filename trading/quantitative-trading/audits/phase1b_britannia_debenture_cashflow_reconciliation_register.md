@@ -131,3 +131,21 @@ Sources for inputs: issue quantity, face value, rate and Actual/365 database met
 **Interpretation:** The 2024 aggregate is quantitatively consistent with the disclosed Actual/Actual terms and inconsistent with applying Actual/365 to the 366-day interval. This is strong corroborative evidence that the CDSL Actual/365 field may be generic or erroneous for this issue. It is not, by itself, a substitute for the executed trust deed or an exact payment advice; retain the formal-term confirmation requirement and do not silently overwrite the source conflict.
 
 This cross-check is for the 2021 issue only. It does not establish exact per-debenture amounts for the 2019 issue's coupons.
+
+
+## 8. 2019 issue: schedule-versus-actual payment-date exception (9 October 2026)
+
+The 2019 information memorandum lists coupon payment dates of 28 August 2020, 28 August 2021 and 28 August 2022, with redemption on 28 August 2022. Britannia's later annual-report disclosure states:
+- second-year interest was paid on 30 August 2021 to holders on record date 26 August 2021; and
+- third-year interest plus redemption was paid on 26 August 2022 to holders on record date 22 August 2022.
+
+Sources:
+- Information memorandum (coupon schedule and day-count clause): https://nsearchives.nseindia.com/corporates/offerdocument/scheme/IM_BRITANNIA.pdf
+- Britannia Annual Report 2021–22 (second-year payment date): https://www.scribd.com/document/660823240/Britannia (secondary-hosted copy; corroborate with issuer/NSE-hosted annual report before treating as primary)
+- Britannia Annual Report 2022–23 (redemption and third-year interest payment): https://nsearchives.nseindia.com/corporate/BRITANNIA_03082023000240_NSEAnnualReportSigned.pdf
+
+This is an additional reconciliation exception: the scheduled coupon/redemption date and actual cash-payment/redemption date differ. Do not assume from the dates alone whether the final coupon was accrued through 28 August 2022 or calculated only through the 26 August 2022 early payment. Obtain the issuer's calculation/payment advice or definitive governing terms and reconcile the exact per-debenture amount. The 2019 issue's exact coupon cash amounts therefore remain unresolved.
+
+### Research result
+
+The public information memorandum and annual-report disclosures establish issue terms and payment chronology, but this search pass did not find an executed trust deed or an issuer/registrar payment advice stating exact per-debenture coupon cash for all three periods. IDBI Trusteeship Services Limited (trustee) and KFin Technologies (registrar) remain the most direct route to resolve the outstanding evidence. No event-ledger values were changed by this research update.
