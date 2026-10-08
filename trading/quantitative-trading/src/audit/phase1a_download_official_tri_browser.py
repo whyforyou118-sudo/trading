@@ -35,9 +35,11 @@ def _activate_report(page, report_name: str) -> None:
     matches = page.get_by_text(report_name, exact=True)
     if not matches.count():
         raise RuntimeError(f"NSE report option not found: {report_name!r}")
-    # NSE currently renders duplicate menu labels; the last matching item is
-    # the visible menu entry in the live Historical Data Reports dropdown.
+    # NSE currently renders duplicate menu labels and the report menu is
+    # scrollable. Scroll the last matching visible-menu item into view before
+    # clicking it so the final "Total returns Index Values" entry is reachable.
     target = matches.last
+    target.scroll_into_view_if_needed()
     try:
         target.click(timeout=5000)
     except Exception:
@@ -194,8 +196,8 @@ def fetch_with_ui(index_name: str, subindex: str, start: dt.date, end: dt.date) 
 
             # Follow the real visible menu hierarchy first. The live NSE page
             # exposes "Historical Index Data" as the first report in this menu.
-            _activate_report(page, "Historical Index Data")
-            print("Activated official NSE report: Historical Index Data")
+            _activate_report(page, "Total returns Index Values")
+            print("Activated official NSE report: Total returns Index Values")
             # We intentionally stop relying on the hidden TRI controls here.
             # The next UI step will be mapped from the live form before we
             # reconnect this navigation to the frozen TRI acquisition path.
