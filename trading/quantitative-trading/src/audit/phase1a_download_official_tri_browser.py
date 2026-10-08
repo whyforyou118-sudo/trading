@@ -31,21 +31,47 @@ RETURN_INDEX_ID = "ddlHistoricalreturntypeeindex"
 
 
 def _activate_report(page, report_name: str) -> None:
-    """Activate one report from the visible NSE Historical Data Reports menu."""
-    matches = page.get_by_text(report_name, exact=True)
-    if not matches.count():
-        raise RuntimeError(f"NSE report option not found: {report_name!r}")
-    # NSE currently renders duplicate menu labels and the report menu is
-    # scrollable. Scroll the last matching visible-menu item into view before
-    # clicking it so the final "Total returns Index Values" entry is reachable.
-    target = matches.last
-    target.scroll_into_view_if_needed()
-    try:
-        target.click(timeout=5000)
-    except Exception:
-        target.evaluate("(e) => e.click()")
-    page.wait_for_timeout(1500)
+    """Open the NSE report menu, then activate a visible report entry."""
+    # The report list is an accordion/dropdown. The final report entry is
+    # hidden until the currently selected report header is opened.
+    headers = [
+        "Historical Index Data",
+        "Archives of Daily/ Monthly Reports",
+        "P/E, P/B & Div.Yield values",
+        "Total returns Index Values",
+    ]
+    opened = False
+    for header in headers:
+        loc = page.get_by_text(header, exact=True)
+        for i in range(loc.count()):
+            candidate = loc.nth(i)
+            if candidate.is_visible():
+                try:
+                    candidate.click(timeout=5000)
+                except Exception:
+                    candidate.evaluate("(e) => e.click()")
+                page.wait_for_timeout(1200)
+                opened = True
+                break
+        if opened:
+            break
+    if not opened:
+        raise RuntimeError("Could not find a visible NSE Historical Data Reports menu header.")
 
+    matches = page.get_by_text(report_name, exact=True)
+    visible = []
+    for i in range(matches.count()):
+        candidate = matches.nth(i)
+        if candidate.is_visible():
+            visible.append(candidate)
+    if not visible:
+        raise RuntimeError(
+            f"NSE report option not visible after opening menu: {report_name!r}; "
+            f"matches={matches.count()}"
+        )
+    target = visible[-1]
+    target.click(timeout=10000)
+    page.wait_for_timeout(1500)
 
 def _options(page, selector: str) -> list[dict]:
     return page.locator(selector).locator("option").evaluate_all(
