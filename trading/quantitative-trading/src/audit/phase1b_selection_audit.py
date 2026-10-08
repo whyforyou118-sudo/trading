@@ -8,7 +8,6 @@ from __future__ import annotations
 import csv
 import json
 import sys
-from dataclasses import asdict
 from datetime import date
 from pathlib import Path
 
@@ -120,19 +119,38 @@ def main() -> int:
 
     # Reconcile selected names and execution dates against both frozen evidence
     # tables. Do not use either table to alter the new implementation's output.
-    expected_by_source: dict[str, dict[str, dict[str, set[str]]]] = {}
+    expected_by_source: dict[str, dict[str, dict[str, object]]] = {}
     for source, path in (("phase05", phase05_path), ("phase1a_pit", pit_path)):
-        grouped: dict[str, dict[str, set[str]]] = {}
-        for r in read_csv(path):
-            d = r.get("rebalance_date") or r.get("decision_date") or ""
-            symbol = r.get("symbol", "")
+        raw_rows = read_csv(path)
+        grouped: dict[str, dict[str, object]] = {}
+        for row in raw_rows:
+            d = row.get("rebalance_date") or row.get("decision_date") or ""
+            symbol = row.get("symbol", "")
             if not d or not symbol:
                 continue
-            execution = r.get("execution_date", "")
-            grouped.setdefault(d, {"symbols": set(), "execution_dates": set()})
-            grouped[d]["symbols"].add(symbol)
+            execution = row.get("execution_date", "")
+            if d not in grouped:
+                grouped[d] = {"symbols": [], "execution_dates": set()}
+            symbols = grouped[d]["symbols"]
+            assert isinstance(symbols, list)
+            if symbol not in symbols:
+                symbols.append(symbol)
             if execution:
-                grouped[d]["execution_dates"].add(execution)
+                execution_dates = grouped[d]["execution_dates"]
+                assert isinstance(execution_dates, set)
+                execution_dates.add(execution)
+        # Phase 0.5 has explicit rank values; use them rather than trusting file order.
+        if source == "phase05":
+            for d in grouped:
+                ranks = {
+                    row["symbol"]: int(row["rank"])
+                    for row in raw_rows
+                    if (row.get("rebalance_date") or "") == d
+                    and row.get("symbol") and row.get("rank", "").isdigit()
+                }
+                symbols = grouped[d]["symbols"]
+                assert isinstance(symbols, list)
+                symbols.sort(key=lambda symbol: ranks.get(symbol, 10**9))
         expected_by_source[source] = grouped
 
     reconciliation_rows: list[dict[str, object]] = []
@@ -140,25 +158,26 @@ def main() -> int:
         actual_dates = {r.decision_date.isoformat(): r for r in selections}
         all_dates = sorted(set(grouped) | set(actual_dates))
         for d in all_dates:
-            expected = grouped.get(d, {"symbols": set(), "execution_dates": set()})
+            expected = grouped.get(d, {"symbols": [], "execution_dates": set()})
+            expected_symbols = list(expected["symbols"])
+            expected_exec_dates = expected["execution_dates"]
             actual = actual_dates.get(d)
-            actual_symbols = set(actual.selected_symbols) if actual else set()
+            actual_symbols = list(actual.selected_symbols) if actual else []
             actual_exec = actual.execution_date.isoformat() if actual else ""
-            expected_exec = "|".join(sorted(expected["execution_dates"]))
-            missing_expected = sorted(expected["symbols"] - actual_symbols)
-            unexpected_actual = sorted(actual_symbols - expected["symbols"])
+            expected_exec = "|".join(sorted(expected_exec_dates))
+            missing_expected = [s for s in expected_symbols if s not in actual_symbols]
+            unexpected_actual = [s for s in actual_symbols if s not in expected_symbols]
             date_match = (
-                not expected["execution_dates"]
-                or expected["execution_dates"] == {actual_exec}
+                not expected_exec_dates or expected_exec_dates == {actual_exec}
             ) if actual else False
-            symbols_match = expected["symbols"] == actual_symbols
+            symbols_match = expected_symbols == actual_symbols
             reconciliation_rows.append({
                 "source": source,
                 "decision_date": d,
-                "expected_count": len(expected["symbols"]),
+                "expected_count": len(expected_symbols),
                 "actual_count": len(actual_symbols),
-                "expected_symbols": "|".join(sorted(expected["symbols"])),
-                "actual_symbols": "|".join(actual.selected_symbols) if actual else "",
+                "expected_symbols": "|".join(expected_symbols),
+                "actual_symbols": "|".join(actual_symbols),
                 "missing_expected": "|".join(missing_expected),
                 "unexpected_actual": "|".join(unexpected_actual),
                 "expected_execution_dates": expected_exec,
