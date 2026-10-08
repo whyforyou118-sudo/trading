@@ -13,10 +13,10 @@ The frozen V6 blueprint requires path-conditional corporate-action handling. The
 
 The new audit script `src/audit/phase1b_britannia_path_relevance.py` checks the frozen Phase 1B selection audit for:
 1. Any BRITANNIA execution position on or before either debenture ex-date.
-2. Either ex-date falling inside any BRITANNIA selection's 12-month formation window after the 1-month skip.
+2. Either ex-date falling inside any quarterly decision's 12-month formation window after the 1-month skip, including decisions where BRITANNIA was not selected.
 3. An explicit report that does not authorize Run 1.
 
-If the script passes on the frozen selection artifact, its conclusion is limited: the unresolved coupon amounts are path-conditionally irrelevant to the frozen V6 primary strategy because no eligible BRITANNIA position exists at entitlement and the ex-dates do not affect a BRITANNIA signal formation window. This does **not** validate the coupon values, complete the generic accounting ledger, or authorize performance by itself.
+If the script passes on the frozen selection artifact, its conclusion is limited: the unresolved coupon amounts and valuation events are path-conditionally irrelevant to the frozen V6 primary strategy because no eligible BRITANNIA position exists at entitlement and neither ex-date overlaps any quarterly momentum formation window. The audit must check all decision dates, not just dates when BRITANNIA was selected. This does **not** validate the coupon values, complete the generic accounting ledger, or authorize performance by itself.
 
 If the audit fails, the Britannia event treatment remains a performance blocker and must be resolved before Run 1.
 
