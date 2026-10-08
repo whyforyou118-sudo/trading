@@ -50,10 +50,9 @@ def test_unknown_schema_fails_closed():
 
 def test_parses_two_digit_year_legacy_nse_date():
     raw = (
-        "SYMBOL,SERIES,OPEN,HIGH,LOW,CLOSE,TIMESTAMP,ISIN\\n"
-        "BRITANNIA,N3,29.5,30,29,29.8,13-Jul-20,INE216A07052\\n"
+        "SYMBOL,SERIES,OPEN,HIGH,LOW,CLOSE,TIMESTAMP,ISIN\n"
+        "BRITANNIA,N3,29.5,30,29,29.8,13-Jul-20,INE216A07052\n"
     ).encode()
     rows = parse_debenture_rows(raw, "legacy-two-digit-year.csv")
     assert len(rows) == 1
     assert rows[0]["date"] == "2020-07-13"
-\n
