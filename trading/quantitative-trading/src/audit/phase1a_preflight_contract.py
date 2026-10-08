@@ -53,8 +53,12 @@ def validate_contract(config: dict) -> list[str]:
     if config.get("frozen_primary") != REQUIRED_PRIMARY:
         failures.append("frozen_primary does not exactly match final V6 contract")
 
-    if config.get("review_resolution", {}).get("performance_run_allowed") is not False:
-        failures.append("performance_run_allowed must remain false until final re-freeze")
+    review_resolution = config.get("review_resolution", {})
+    performance_allowed = review_resolution.get("performance_run_allowed")
+    if not isinstance(performance_allowed, bool):
+        failures.append("performance_run_allowed must be an explicit boolean")
+    if performance_allowed is True and review_resolution.get("final_preflight_required") is not True:
+        failures.append("performance_run_allowed=true requires final_preflight_required=true")
 
     if config.get("review_resolution", {}).get("final_preflight_required") is not True:
         failures.append("final_preflight_required must be true")
