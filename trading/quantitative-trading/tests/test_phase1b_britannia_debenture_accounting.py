@@ -18,6 +18,7 @@ from portfolio.accounting import (
     Dividend,
     Trade,
     apply_ledger,
+    debenture_mark_price,
 )
 
 
@@ -135,4 +136,30 @@ def test_coupon_without_outstanding_debentures_fails_closed():
                     source_ref="issuer coupon schedule",
                 )
             ],
+        )
+
+
+
+def test_face_value_mark_prelisting_does_not_use_future_listing_quote():
+    assert debenture_mark_price(
+        valuation_date="2019-09-30",
+        first_tradable_date="2019-10-09",
+        face_value=30.0,
+        raw_market_price=30.81,
+    ) == pytest.approx(30.0)
+
+
+def test_raw_market_price_is_required_on_and_after_listing():
+    assert debenture_mark_price(
+        valuation_date="2019-10-09",
+        first_tradable_date="2019-10-09",
+        face_value=30.0,
+        raw_market_price=30.81,
+    ) == pytest.approx(30.81)
+    with pytest.raises(ValueError, match="MISSING_RAW_DEBENTURE_MARK"):
+        debenture_mark_price(
+            valuation_date="2019-10-10",
+            first_tradable_date="2019-10-09",
+            face_value=30.0,
+            raw_market_price=None,
         )
