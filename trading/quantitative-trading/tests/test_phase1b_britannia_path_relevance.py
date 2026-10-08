@@ -37,7 +37,7 @@ def test_path_audit_blocks_if_britannia_was_held_at_entitlement():
 
 def test_path_audit_blocks_if_ex_date_is_inside_signal_formation_window():
     rows = [{
-        "decision_date": "2022-06-30",
+        "decision_date": "2022-06-25",
         "execution_date": "2022-07-01",
         "symbol": "BRITANNIA",
         "selection_status": "PASS",
