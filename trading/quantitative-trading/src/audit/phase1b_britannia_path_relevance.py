@@ -39,10 +39,13 @@ def _subtract_months(value: date, months: int) -> date:
     return date(year, month, min(value.day, monthrange(year, month)[1]))
 
 
-def _load_rows(path: Path) -> list[dict[str, str]]:
+def _load_rows(
+    path: Path,
+    required_columns: set[str] | None = None,
+) -> list[dict[str, str]]:
     with path.open("r", newline="", encoding="utf-8-sig") as handle:
         rows = list(csv.DictReader(handle))
-    required = {
+    required = required_columns or {
         "decision_date", "execution_date", "symbol", "selection_status"
     }
     if not rows or not required.issubset(rows[0]):
@@ -154,7 +157,7 @@ def main() -> int:
         raise SystemExit(f"BLOCKED: missing exact formation-window artifact: {coverage_path}")
     report = build_path_relevance_report(
         _load_rows(input_path),
-        _load_rows(coverage_path),
+        _load_rows(coverage_path, {"decision_date", "formation_start", "formation_end"}),
     )
     output_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
