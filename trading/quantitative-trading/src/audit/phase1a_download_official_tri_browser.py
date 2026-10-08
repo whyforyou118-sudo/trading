@@ -80,17 +80,44 @@ def _options(page, selector: str) -> list[dict]:
 
 
 def _select_by_text(page, selector: str, wanted: str) -> None:
-    loc = page.locator(selector)
-    opts = _options(page, selector)
-    match = next((o for o in opts if o["text"].upper() == wanted.upper()), None)
-    if match is None:
-        match = next((o for o in opts if wanted.upper() in o["text"].upper()), None)
-    if match is None:
-        raise RuntimeError(
-            f"NSE UI option not found: {wanted!r}; "
-            f"selector={selector}; options={[o['text'] for o in opts]!r}"
+    """Select an option from the visible NSE control, not a hidden duplicate."""
+    candidates = page.locator(selector)
+    usable = []
+    for i in range(candidates.count()):
+        loc = candidates.nth(i)
+        try:
+            if not loc.is_visible():
+                continue
+        except Exception:
+            continue
+        opts = loc.locator("option").evaluate_all(
+            "(els) => els.map(e => ({text:(e.textContent||'').trim(), value:e.value}))"
         )
-    loc.select_option(value=match["value"], force=True)
+        if opts:
+            usable.append((loc, opts))
+    # Some NSE controls have duplicate IDs: the hidden template has no options,
+    # while the rendered control carries the real option list.
+    if not usable:
+        all_selects = page.locator("select:visible")
+        for i in range(all_selects.count()):
+            loc = all_selects.nth(i)
+            opts = loc.locator("option").evaluate_all(
+                "(els) => els.map(e => ({text:(e.textContent||'').trim(), value:e.value}))"
+            )
+            if any(o["text"].strip().upper() == wanted.upper() for o in opts):
+                usable.append((loc, opts))
+    for loc, opts in usable:
+        match = next((o for o in opts if o["text"].upper() == wanted.upper()), None)
+        if match is None:
+            match = next((o for o in opts if wanted.upper() in o["text"].upper()), None)
+        if match is not None:
+            loc.select_option(value=match["value"], force=True)
+            return
+    raise RuntimeError(
+        f"NSE UI option not found: {wanted!r}; selector={selector}; "
+        f"visible_candidates={[(i, candidates.nth(i).is_visible()) for i in range(candidates.count())]}; "
+        f"visible_select_count={page.locator('select:visible').count()}"
+    )
 
 
 def _visible_input_inventory(page) -> list[dict]:
