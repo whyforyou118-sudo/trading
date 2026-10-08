@@ -138,8 +138,8 @@ def build_path_relevance_report(
                 and row.get("policy") == "provisional_face_value"
             ]
             verified = any(
-                row.get("applied", "").strip().lower() == "true"
-                and row.get("factor_applied_to_pre_event_equity_prices", "").strip() != ""
+                str(row.get("applied", "")).strip().lower() == "true"
+                and str(row.get("factor_applied_to_pre_event_equity_prices", "")).strip() != ""
                 for row in matching
             )
             verified_windows.append({
