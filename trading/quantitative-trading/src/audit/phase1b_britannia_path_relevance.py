@@ -50,8 +50,12 @@ def _load_rows(path: Path) -> list[dict[str, str]]:
     return rows
 
 
-def build_path_relevance_report(rows: Iterable[Mapping[str, str]]) -> dict:
+def build_path_relevance_report(
+    rows: Iterable[Mapping[str, str]],
+    coverage_rows: Iterable[Mapping[str, str]] | None = None,
+) -> dict:
     rows = list(rows)
+    coverage_rows = list(coverage_rows) if coverage_rows is not None else None
     selections = [
         row for row in rows
         if row.get("selection_status") == "PASS"
@@ -68,7 +72,29 @@ def build_path_relevance_report(rows: Iterable[Mapping[str, str]]) -> dict:
     # The selection audit contains five rows per decision date. Use every
     # unique date, not only dates when BRITANNIA made the Top-5: a corporate
     # action can change its momentum rank even when it is not selected.
-    decision_dates = sorted({date.fromisoformat(row["decision_date"]) for row in rows})
+    if coverage_rows is not None:
+        required_coverage = {"decision_date", "formation_start", "formation_end"}
+        if not coverage_rows or not required_coverage.issubset(coverage_rows[0]):
+            raise ValueError("coverage audit missing decision_date/formation_start/formation_end")
+        windows = {
+            date.fromisoformat(row["decision_date"]): (
+                date.fromisoformat(row["formation_start"]),
+                date.fromisoformat(row["formation_end"]),
+            )
+            for row in coverage_rows
+        }
+        if len(windows) != len(coverage_rows):
+            raise ValueError("coverage audit contains duplicate decision dates")
+        window_source = "phase1b_selection_coverage.csv"
+    else:
+        # Synthetic unit tests may provide only decision dates. Production audit
+        # must use exact, calendar-derived formation dates from coverage output.
+        windows = {}
+        for decision_date in sorted({date.fromisoformat(row["decision_date"]) for row in rows}):
+            signal_end = _subtract_months(decision_date, 1)
+            windows[decision_date] = (_subtract_months(signal_end, 12), signal_end)
+        window_source = "derived_from_synthetic_decision_dates"
+    decision_dates = sorted(windows)
     if not decision_dates:
         raise ValueError("selection audit contains no decision dates")
 
@@ -79,9 +105,8 @@ def build_path_relevance_report(rows: Iterable[Mapping[str, str]]) -> dict:
         held_before_ex_date = any(item["execution_date"] <= ex_date for item in parsed)
         lookback_overlaps = []
         for decision_date in decision_dates:
-            # Signal uses 12M formation ending one month before each decision date.
-            signal_end = _subtract_months(decision_date, 1)
-            signal_start = _subtract_months(signal_end, 12)
+            # Production uses exact month-end dates from the selection coverage artifact.
+            signal_start, signal_end = windows[decision_date]
             if signal_start <= ex_date <= signal_end:
                 lookback_overlaps.append({
                     "decision_date": decision_date.isoformat(),
@@ -106,6 +131,7 @@ def build_path_relevance_report(rows: Iterable[Mapping[str, str]]) -> dict:
             1 for row in rows if row.get("selection_status") == "PASS"
         ),
         "quarterly_decision_dates_checked": len(decision_dates),
+        "formation_window_source": window_source,
         "BRITANNIA_selection_count": len(parsed),
         "first_BRITANNIA_execution_date": first_execution,
         "events": event_results,
@@ -123,7 +149,13 @@ def main() -> int:
     root = Path(__file__).resolve().parents[2]
     input_path = root / "audits" / "phase1b_selection_audit.csv"
     output_path = root / "audits" / "phase1b_britannia_path_relevance.json"
-    report = build_path_relevance_report(_load_rows(input_path))
+    coverage_path = ROOT / "audits" / "phase1b_selection_coverage.csv"
+    if not coverage_path.exists():
+        raise SystemExit(f"BLOCKED: missing exact formation-window artifact: {coverage_path}")
+    report = build_path_relevance_report(
+        _load_rows(input_path),
+        _load_rows(coverage_path),
+    )
     output_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
     return 0 if report["status"] == "PASS" else 1
