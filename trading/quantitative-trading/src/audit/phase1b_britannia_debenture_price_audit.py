@@ -3,7 +3,9 @@
 This is a source-coverage audit only, not a portfolio simulation. It scans the
 already-downloaded raw bhavcopy files for the two known ISINs and reports raw
 OHLC observations, first/last dates, and expected listing/redemption dates.
-It does not assume face value equals market value and does not authorize Run 1.
+A redemption-date price row is diagnostic only: a redeemed security may no
+longer appear in that day's market file. This audit does not value the debt
+instruments or authorize Run 1.
 """
 from __future__ import annotations
 
@@ -166,8 +168,6 @@ def main() -> int:
             failures.append(f"no raw observations found for {isin}")
         if spec["listing_date"] not in date_set:
             failures.append(f"listing date {spec['listing_date']} absent for {isin}")
-        if spec["redemption_date"] not in date_set:
-            failures.append(f"redemption date {spec['redemption_date']} absent for {isin}")
 
     report = {
         "audit_type": "BRITANNIA_DEBENTURE_RAW_PRICE_COVERAGE_NOT_PERFORMANCE",
