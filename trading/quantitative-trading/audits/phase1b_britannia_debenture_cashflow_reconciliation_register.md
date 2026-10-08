@@ -88,3 +88,30 @@ This pass found additional issuer/exchange-hosted disclosures, but **did not loc
 3. Confirmation of whether the final coupon is a separate cash payment or included in the redemption amount for each instrument.
 
 **No coupon values were inferred or entered in this pass.** Do not use nominal rate × face value as a substitute for the verified cash flow, and do not use rounded issue-wide totals to reverse-engineer exact per-unit payments.
+
+
+## 6. Follow-up findings: exact unclaimed-interest aggregates and trustee trail (9 October 2026)
+
+### 2021 issue — distinguish unclaimed interest from total coupon paid
+
+Britannia's official 2023–24 annual report identifies two separate amounts relating to the ₹29 debenture issue that were remitted to IEPF:
+- **Second-year interest:** ₹7,47,744.35 remitted on 3 June 2023.
+- **Third-year interest:** ₹7,47,548.98 remitted on 3 June 2024.
+
+Source: https://nsearchives.nseindia.com/annual_reports/AR_24587_BRITANNIA_2023_2024_1907202401243.pdf (IEPF-related information section, printed page 11).
+
+These are exact unclaimed-interest aggregates, not the issue-wide coupon payments and not exact per-debenture coupon evidence. Keep them separate from the rounded ₹38.42 crore issue-level interest amounts. They must not be used to infer coupon cash paid to all holders.
+
+### Trustee and registrar route
+
+Britannia's 2020–21 annual report identifies IDBI Trusteeship Services Limited as trustee and KFin Technologies Private Limited as registrar for the 2019 ₹30 issue:
+https://media.britannia.co.in/Annual_Report_2020_21_be3a70d511.pdf
+
+Britannia's 2023–24 annual report identifies IDBI Trusteeship Services Limited as trustee and KFin Technologies Limited as registrar for the ₹29 issue:
+https://nsearchives.nseindia.com/annual_reports/AR_24587_BRITANNIA_2023_2024_1907202401243.pdf
+
+These are practical primary-source contacts for requesting the executed trust deed / definitive terms, coupon computation basis, payment advice, and exact per-debenture cash paid for each coupon event. No trust deed or complete per-unit payment advice was found in this search pass.
+
+### Gate remains unchanged
+
+No exact per-debenture coupon values have been approved for event-ledger ingestion in this pass. The 2021 Actual/365 versus Actual/Actual conflict remains unresolved. Continue to block historical performance until definitive terms and payment calculations reconcile, including whether the final coupon is separately paid or bundled with redemption.
