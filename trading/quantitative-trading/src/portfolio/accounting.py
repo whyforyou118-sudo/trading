@@ -202,6 +202,37 @@ class ShareRatioAction:
             raise ValueError("share ratio terms must be positive whole numbers")
 
 
+def debenture_mark_price(
+    *,
+    valuation_date: str,
+    first_tradable_date: str,
+    face_value: float,
+    raw_market_price: float | None,
+) -> float:
+    """Apply FACE_VALUE_PROVISIONAL_V1 without look-ahead or stale post-listing marks.
+
+    Before first tradable date, use face value and ignore any future market quote.
+    On/after first tradable date, require the raw market price for that date;
+    missing marks fail closed rather than carrying a stale price.
+    """
+    from datetime import date as _date
+
+    try:
+        valuation_day = _date.fromisoformat(valuation_date)
+        first_tradable_day = _date.fromisoformat(first_tradable_date)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("valuation dates must be ISO YYYY-MM-DD") from exc
+    if not isfinite(float(face_value)) or face_value <= 0:
+        raise ValueError("face_value must be finite and positive")
+    if valuation_day < first_tradable_day:
+        return float(face_value)
+    if raw_market_price is None:
+        raise ValueError("MISSING_RAW_DEBENTURE_MARK: raw market price required on/after listing")
+    if not isfinite(float(raw_market_price)) or raw_market_price <= 0:
+        raise ValueError("raw_market_price must be finite and positive")
+    return float(raw_market_price)
+
+
 LedgerEvent = Union[Trade, Dividend, ShareRatioAction, SecurityConversion, RightsEntitlement, DebentureEntitlement, DebentureCoupon, DebentureRedemption]
 
 
