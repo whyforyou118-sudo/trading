@@ -55,7 +55,7 @@ def _iso_date(value: str) -> str:
     value = (value or "").strip()
     if len(value) == 10 and value[4] == "-" and value[0:4].isdigit():
         return value
-    for fmt in ("%d-%b-%Y", "%d-%m-%Y"):
+    for fmt in ("%d-%b-%Y", "%d-%b-%y", "%d-%m-%Y", "%d-%m-%y"):
         try:
             return datetime.strptime(value, fmt).date().isoformat()
         except ValueError:
