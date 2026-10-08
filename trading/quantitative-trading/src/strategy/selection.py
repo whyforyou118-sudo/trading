@@ -105,6 +105,12 @@ def build_quarterly_selection_audit(
         )
         start_prices = price_store.prices(formation_start)
         end_prices = price_store.prices(formation_end)
+        if signal_price_adjuster is not None:
+            # Adjust only the signal inputs. Execution prices are fetched independently
+            # from the raw price store and remain RAW_UNADJUSTED.
+            start_prices, end_prices = signal_price_adjuster(
+                formation_end, start_prices, end_prices
+            )
         execution_prices = price_store.prices(execution_date)
 
         # Ask for all scoreable names so the audit retains the full eligible
