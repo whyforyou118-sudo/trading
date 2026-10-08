@@ -40,7 +40,8 @@ def test_targets_use_execution_open_pretrade_nav_not_initial_capital():
 
 def test_missing_open_for_existing_holding_fails_closed():
     state = PortfolioState(cash=10000, positions={"OLD": 10})
-    with pytest.raises(KeyError):
+    # Missing valuation prices are a portfolio-state validation error.
+    with pytest.raises(ValueError, match="missing mark price"):
         plan_and_execute_at_open(
             state=state,
             decision_date=date(2025, 3, 31),
