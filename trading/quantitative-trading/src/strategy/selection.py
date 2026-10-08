@@ -57,7 +57,10 @@ def build_quarterly_selection_audit(
 ) -> list[QuarterlySelection]:
     """Build deterministic signal/ranking rows without computing performance.
 
-    Signal inputs are month-end raw close prices. Ranking is descending
+    Signal inputs are month-end close prices. By default they are raw; an
+    optional signal_price_adjuster can transform only the signal maps before
+    ranking. Execution prices are fetched separately from the raw store and
+    are never passed through that adjustment hook. Ranking is descending
     momentum with symbol-ascending tie breaks. The selected Top-N is fixed
     before execution-open availability is checked: a missing selected open
     blocks that rebalance rather than silently replacing the name.
