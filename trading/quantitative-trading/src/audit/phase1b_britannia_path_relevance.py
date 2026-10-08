@@ -56,9 +56,21 @@ def _load_rows(
 def build_path_relevance_report(
     rows: Iterable[Mapping[str, str]],
     coverage_rows: Iterable[Mapping[str, str]] | None = None,
+    signal_adjustment_rows: Iterable[Mapping[str, str]] | None = None,
+    signal_adjustment_summary: Mapping[str, object] | None = None,
 ) -> dict:
     rows = list(rows)
     coverage_rows = list(coverage_rows) if coverage_rows is not None else None
+    signal_adjustment_rows = (
+        list(signal_adjustment_rows) if signal_adjustment_rows is not None else None
+    )
+    summary_pass = bool(
+        signal_adjustment_summary
+        and signal_adjustment_summary.get("status") == "PASS"
+        and signal_adjustment_summary.get("primary_adjustment_status") == "PASS"
+        and signal_adjustment_summary.get("listing_only_sensitivity_status") == "PASS"
+        and signal_adjustment_summary.get("raw_selection_artifact_match") is True
+    )
     selections = [
         row for row in rows
         if row.get("selection_status") == "PASS"
@@ -116,19 +128,49 @@ def build_path_relevance_report(
                     "formation_start": signal_start.isoformat(),
                     "formation_end": signal_end.isoformat(),
                 })
-        passed = not held_before_ex_date and not lookback_overlaps
+
+        verified_windows = []
+        for window in lookback_overlaps:
+            matching = [
+                row for row in (signal_adjustment_rows or [])
+                if row.get("event_id") == event["event_id"]
+                and row.get("formation_end") == window["formation_end"]
+                and row.get("policy") == "provisional_face_value"
+            ]
+            verified = any(
+                row.get("applied", "").strip().lower() == "true"
+                and row.get("factor_applied_to_pre_event_equity_prices", "").strip() != ""
+                for row in matching
+            )
+            verified_windows.append({
+                **window,
+                "primary_signal_adjustment_verified": verified,
+            })
+        signal_effect_resolved = (
+            signal_adjustment_rows is not None
+            and summary_pass
+            and len(verified_windows) == len(lookback_overlaps)
+            and all(row["primary_signal_adjustment_verified"] for row in verified_windows)
+        )
+        # No prior holding resolves portfolio entitlement; signal-window overlap
+        # is acceptable only when the primary point-in-time adjustment is audited.
+        passed = not held_before_ex_date and signal_effect_resolved
         all_pass = all_pass and passed
         event_results.append({
             **event,
             "eligible_parent_position_at_ex_date": held_before_ex_date,
             "ex_date_in_any_quarterly_signal_formation_window": bool(lookback_overlaps),
             "overlapping_signal_windows": lookback_overlaps,
-            "path_conditionally_irrelevant_to_frozen_V6": passed,
+            "verified_adjusted_signal_windows": verified_windows,
+            "path_conditionally_irrelevant_to_frozen_V6": (
+                not held_before_ex_date and not lookback_overlaps
+            ),
+            "signal_effect_resolved_by_primary_adjustment": signal_effect_resolved,
             "status": "PASS" if passed else "BLOCKED",
         })
 
     return {
-        "audit_type": "PATH_CONDITIONAL_CORPORATE_ACTION_RELEVANCE_NOT_PERFORMANCE",
+        "audit_type": "PATH_CONDITIONAL_CORPORATE_ACTION_AND_SIGNAL_ADJUSTMENT_NOT_PERFORMANCE",
         "strategy": "V6 frozen PIT NIFTY 50 Top-5, 12M formation, 1M skip, quarterly",
         "selection_rows_checked": sum(
             1 for row in rows if row.get("selection_status") == "PASS"
@@ -141,9 +183,9 @@ def build_path_relevance_report(
         "status": "PASS" if all_pass else "BLOCKED",
         "run1_authorized": False,
         "limitations": [
-            "This checks signal-window relevance using all unique decision dates in the supplied frozen selection audit.",
-            "It does not verify debenture coupon amounts or replace the synthetic accounting tests.",
-            "It does not authorize historical performance Run 1; all other preflight gates remain required.",
+            "This checks all unique decision dates and requires an audited primary signal adjustment for every overlapping formation window.",
+            "The signal-adjustment summary must pass both primary and listing-only sensitivity checks and match the existing raw selection artifact.",
+            "It does not verify debenture fair value or coupon amounts, and it does not authorize historical performance Run 1.",
         ],
     }
 
@@ -153,11 +195,23 @@ def main() -> int:
     input_path = root / "audits" / "phase1b_selection_audit.csv"
     output_path = root / "audits" / "phase1b_britannia_path_relevance.json"
     coverage_path = root / "audits" / "phase1b_selection_coverage.csv"
+    adjustment_path = root / "audits" / "phase1b_britannia_signal_adjustment_events.csv"
+    adjustment_summary_path = root / "audits" / "phase1b_britannia_signal_adjustment_summary.json"
     if not coverage_path.exists():
         raise SystemExit(f"BLOCKED: missing exact formation-window artifact: {coverage_path}")
+    adjustment_rows = (
+        _load_rows(adjustment_path, {"event_id", "formation_end", "policy", "applied"})
+        if adjustment_path.exists() else None
+    )
+    adjustment_summary = (
+        json.loads(adjustment_summary_path.read_text(encoding="utf-8"))
+        if adjustment_summary_path.exists() else None
+    )
     report = build_path_relevance_report(
         _load_rows(input_path),
         _load_rows(coverage_path, {"decision_date", "formation_start", "formation_end"}),
+        adjustment_rows,
+        adjustment_summary,
     )
     output_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2))
