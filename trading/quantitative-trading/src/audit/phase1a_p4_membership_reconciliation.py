@@ -24,8 +24,11 @@ def read(path: Path):
 
 
 def source_key(value: str) -> str:
-    # Source strings can contain a filename plus "/ IndexInclExcl.xls".
+    # Membership rows may prefix the same official filename with
+    # "NSE Circular ", while G1 stores the filename directly. Normalize
+    # that presentation difference before reconciling the two artifacts.
     token = value.split("/", 1)[0].strip()
+    token = token.removeprefix("NSE Circular ").strip()
     return token
 
 
