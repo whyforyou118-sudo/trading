@@ -1,10 +1,8 @@
 """Download official NSE Indices gross TRI benchmarks for Phase 1A.
 
-Source: https://www.niftyindices.com/reports/historical-data
-Endpoint: /Backpage.aspx/getTotalReturnIndexString
-
-The endpoint limits requests to roughly one year, so the downloader uses
-calendar-year chunks and validates the resulting daily series.
+Uses the public niftyindices.com historical-data API. The API's canonical
+index names are discovered from its Equity/TRI metadata endpoint, then the
+two frozen benchmark series are fetched in <=365-day chunks.
 """
 
 from __future__ import annotations
@@ -32,57 +30,48 @@ TARGETS = {
 
 
 def post_json(session: requests.Session, url: str, payload: dict) -> object:
-    r = session.post(url, json=payload, timeout=60)
-    r.raise_for_status()
-    outer = r.json()
-    inner = outer.get("d", "[]")
-    if isinstance(inner, str):
-        if inner.lower() == "false":
+    response = session.post(url, json=payload, timeout=60)
+    response.raise_for_status()
+    value = response.json().get("d", "[]")
+    if isinstance(value, str):
+        if value.lower() == "false":
             return []
-        return json.loads(inner)
-    return inner
+        return json.loads(value)
+    return value
 
 
 def discover_names(session: requests.Session) -> dict[str, str]:
-    mapping = session.get(MAPPING_URL, timeout=60)
-    mapping.raise_for_status()
-    mapping_rows = mapping.json()
-    long_names = {
-        str(x.get("Index_long_name", "")).strip().upper()
-        for x in mapping_rows
-        if x.get("Index_long_name")
-    }
+    """Discover canonical TRI names from the official dropdown metadata."""
+    categories = post_json(
+        session,
+        SUBTYPE_URL,
+        {"cinfo": {"indextype": "Equity", "indexgroup": "Total Returns Index Values"}},
+    )
 
     discovered: set[str] = set()
-    for subtype in ("Broad Market Indices", "Strategy Indices"):
+    for row in categories:
+        category = str(row.get("indextype", "")).strip()
+        if not category:
+            continue
         rows = post_json(
             session,
             INDEXDATA_URL,
-            {"cinfo": {"indextype": subtype, "indexgroup": "Total Returns Index Values"}},
+            {"cinfo": {"indextype": category, "indexgroup": "Total Returns Index Values"}},
         )
-        for row in rows:
-            name = str(row.get("indextype", "")).strip()
+        for item in rows:
+            name = str(item.get("indextype", "")).strip()
             if name:
                 discovered.add(name.upper())
 
-    resolved = {}
+    resolved: dict[str, str] = {}
     for target in TARGETS:
         exact = next((x for x in discovered if x == target), None)
         if exact is None:
-            # Some site layers expose spacing/casing variants.
-            exact = next(
-                (x for x in discovered if x.replace(" ", "") == target.replace(" ", "")),
-                None,
-            )
-        if exact is None:
             raise RuntimeError(
-                f"Could not discover official TRI index name for {target}. "
-                f"Available matches: {sorted(x for x in discovered if 'NIFTY50' in x.replace(' ', ''))}"
+                f"Official TRI metadata did not expose {target!r}. "
+                f"Available matching names: "
+                f"{sorted(x for x in discovered if 'NIFTY' in x)[:100]}"
             )
-        # Use the discovered display name for both fields. The mapping is retained
-        # as a sanity check that the index is an official Nifty Indices name.
-        if exact not in long_names and target == "NIFTY 50":
-            raise RuntimeError("NIFTY 50 missing from official IndexMapping.json")
         resolved[target] = exact
     return resolved
 
@@ -90,22 +79,21 @@ def discover_names(session: requests.Session) -> dict[str, str]:
 def fetch_tri(session: requests.Session, index_name: str) -> list[dict]:
     rows: list[dict] = []
     cursor = START
+
     while cursor <= END:
         chunk_end = min(cursor + timedelta(days=364), END)
-        payload = {
-            "cinfo": (
-                "{'name':'"
-                + index_name
-                + "','startDate':'"
-                + cursor.strftime("%d %b %Y")
-                + "','endDate':'"
-                + chunk_end.strftime("%d %b %Y")
-                + "','indexName':'"
-                + index_name
-                + "'}"
-            )
-        }
-        chunk = post_json(session, TRI_URL, payload)
+        inner = (
+            "{'name':'"
+            + index_name
+            + "','startDate':'"
+            + cursor.strftime("%d %b %Y")
+            + "','endDate':'"
+            + chunk_end.strftime("%d %b %Y")
+            + "','indexName':'"
+            + index_name
+            + "'}"
+        )
+        chunk = post_json(session, TRI_URL, {"cinfo": inner})
         if not chunk:
             raise RuntimeError(
                 f"No TRI rows returned for {index_name}: {cursor} to {chunk_end}"
@@ -113,29 +101,28 @@ def fetch_tri(session: requests.Session, index_name: str) -> list[dict]:
         rows.extend(chunk)
         cursor = chunk_end + timedelta(days=1)
 
-    clean = {}
+    values: dict[str, float] = {}
     for row in rows:
-        raw_date = row.get("Date") or row.get("HistoricalDate")
+        raw_date = row.get("Date")
         raw_tri = row.get("TotalReturnsIndex")
         if raw_date is None or raw_tri in (None, ""):
             continue
         dt = datetime.strptime(str(raw_date), "%d %b %Y").date()
         if START <= dt <= END:
-            clean[dt.isoformat()] = float(raw_tri)
+            values[dt.isoformat()] = float(raw_tri)
 
-    if not clean:
+    ordered = [{"date": d, "tri": values[d]} for d in sorted(values)]
+    if not ordered:
         raise RuntimeError(f"No usable TRI observations for {index_name}")
-
-    ordered = [{"date": k, "tri": clean[k]} for k in sorted(clean)]
     return ordered
 
 
 def write_csv(path: Path, rows: list[dict], index_name: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8", newline="") as f:
-        f.write("index_name,date,tri\\n")
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        handle.write("index_name,date,tri\n")
         for row in rows:
-            f.write(f"{index_name},{row['date']},{row['tri']:.8f}\\n")
+            handle.write(f"{index_name},{row['date']},{row['tri']:.8f}\n")
 
 
 def main() -> None:
@@ -143,11 +130,23 @@ def main() -> None:
     session.headers.update(
         {
             "Content-Type": "application/json; charset=UTF-8",
+            "X-Requested-With": "XMLHttpRequest",
             "Origin": BASE,
             "Referer": f"{BASE}/reports/historical-data",
-            "User-Agent": "Mozilla/5.0",
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/154.0.0.0 Safari/537.36"
+            ),
         }
     )
+
+    # Prime the official page for Akamai/session compatibility. Failure here
+    # is non-fatal because the API can operate without cookies.
+    try:
+        session.get(f"{BASE}/reports/historical-data", timeout=10)
+    except requests.RequestException:
+        pass
 
     resolved = discover_names(session)
     print("Official TRI names:")
