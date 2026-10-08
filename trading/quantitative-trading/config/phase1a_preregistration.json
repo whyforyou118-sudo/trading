@@ -163,7 +163,7 @@
   },
   "review_resolution": {
     "status": "V6_VALIDATION_RESOLUTION",
-    "performance_run_allowed": false,
+    "performance_run_allowed": true,
     "gate_order": [
       "G1_ANNOUNCEMENT_VS_EFFECTIVE_MEMBERSHIP_DATE",
       "G2_SIGNAL_PRICE_AND_SPLIT_BONUS_INVARIANT",
