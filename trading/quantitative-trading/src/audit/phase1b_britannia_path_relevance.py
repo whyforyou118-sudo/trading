@@ -2,7 +2,7 @@
 
 This audit determines whether the frozen Top-5 strategy had an eligible
 BRITANNIA position at either debenture entitlement date, and whether either
-ex-date falls inside a BRITANNIA momentum signal's 12M formation window after
+ex-date falls inside any quarterly decision's 12M formation window after
 the 1M skip. It does not estimate coupon cashflows or authorize Run 1.
 """
 from __future__ import annotations
@@ -65,6 +65,12 @@ def build_path_relevance_report(rows: Iterable[Mapping[str, str]]) -> dict:
         })
     parsed.sort(key=lambda row: row["decision_date"])
     first_execution = parsed[0]["execution_date"].isoformat() if parsed else None
+    # The selection audit contains five rows per decision date. Use every
+    # unique date, not only dates when BRITANNIA made the Top-5: a corporate
+    # action can change its momentum rank even when it is not selected.
+    decision_dates = sorted({date.fromisoformat(row["decision_date"]) for row in rows})
+    if not decision_dates:
+        raise ValueError("selection audit contains no decision dates")
 
     event_results = []
     all_pass = True
@@ -72,13 +78,13 @@ def build_path_relevance_report(rows: Iterable[Mapping[str, str]]) -> dict:
         ex_date = date.fromisoformat(event["ex_date"])
         held_before_ex_date = any(item["execution_date"] <= ex_date for item in parsed)
         lookback_overlaps = []
-        for item in parsed:
-            # Signal uses 12M formation ending one month before the decision date.
-            signal_end = _subtract_months(item["decision_date"], 1)
+        for decision_date in decision_dates:
+            # Signal uses 12M formation ending one month before each decision date.
+            signal_end = _subtract_months(decision_date, 1)
             signal_start = _subtract_months(signal_end, 12)
             if signal_start <= ex_date <= signal_end:
                 lookback_overlaps.append({
-                    "decision_date": item["decision_date"].isoformat(),
+                    "decision_date": decision_date.isoformat(),
                     "formation_start": signal_start.isoformat(),
                     "formation_end": signal_end.isoformat(),
                 })
@@ -87,7 +93,7 @@ def build_path_relevance_report(rows: Iterable[Mapping[str, str]]) -> dict:
         event_results.append({
             **event,
             "eligible_parent_position_at_ex_date": held_before_ex_date,
-            "ex_date_in_any_BRITANNIA_signal_formation_window": bool(lookback_overlaps),
+            "ex_date_in_any_quarterly_signal_formation_window": bool(lookback_overlaps),
             "overlapping_signal_windows": lookback_overlaps,
             "path_conditionally_irrelevant_to_frozen_V6": passed,
             "status": "PASS" if passed else "BLOCKED",
@@ -99,13 +105,14 @@ def build_path_relevance_report(rows: Iterable[Mapping[str, str]]) -> dict:
         "selection_rows_checked": sum(
             1 for row in rows if row.get("selection_status") == "PASS"
         ),
+        "quarterly_decision_dates_checked": len(decision_dates),
         "BRITANNIA_selection_count": len(parsed),
         "first_BRITANNIA_execution_date": first_execution,
         "events": event_results,
         "status": "PASS" if all_pass else "BLOCKED",
         "run1_authorized": False,
         "limitations": [
-            "This proves path relevance only from the supplied frozen selection audit.",
+            "This checks signal-window relevance using all unique decision dates in the supplied frozen selection audit.",
             "It does not verify debenture coupon amounts or replace the synthetic accounting tests.",
             "It does not authorize historical performance Run 1; all other preflight gates remain required.",
         ],
