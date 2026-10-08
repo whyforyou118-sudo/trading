@@ -152,7 +152,7 @@ def main() -> int:
     root = Path(__file__).resolve().parents[2]
     input_path = root / "audits" / "phase1b_selection_audit.csv"
     output_path = root / "audits" / "phase1b_britannia_path_relevance.json"
-    coverage_path = ROOT / "audits" / "phase1b_selection_coverage.csv"
+    coverage_path = root / "audits" / "phase1b_selection_coverage.csv"
     if not coverage_path.exists():
         raise SystemExit(f"BLOCKED: missing exact formation-window artifact: {coverage_path}")
     report = build_path_relevance_report(
