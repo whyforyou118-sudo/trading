@@ -1,3 +1,9 @@
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
 from audit.phase1a_gate3_ledger_replays import (
     replay_gail_bonus,
     replay_real_dividend,

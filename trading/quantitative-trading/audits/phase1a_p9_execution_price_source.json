@@ -1,0 +1,9 @@
+{
+  "source": "NSE historical daily price data",
+  "field": "OPEN",
+  "session_convention": "next actual NSE trading day after the rebalance decision date",
+  "availability_convention": "execution open must be available for the selected security on the execution date",
+  "missing_open_behavior": "FAIL_CLOSED",
+  "suspension_behavior": "FAIL_CLOSED",
+  "status": "PASS"
+}

@@ -122,3 +122,19 @@ The freeze/review documentation is in:
 `docs/BLUEPRINT_V6_AMENDMENTS.md`
 and
 `docs/V6_INDEPENDENT_ADVERSARIAL_REVIEW.md`
+
+
+## Final V6 source-of-truth amendments
+
+The final V6 real-money blueprint supersedes any earlier review wording that conflicts with it.
+
+- No artificial time limit is used. Correctness and evidence take priority over schedule.
+- Performance is blocked until P1-P9 pass and a final re-freeze is created.
+- Random-5 one-sided Monte Carlo p-value cutoff for the final V6 PASS rule is 0.10.
+- Estimand A applies percentage/notional costs and slippage; fixed rupee charges inherently tied to whole-share transactions are excluded and separately reported. Estimand B includes all actual applicable costs.
+- P5 is a hard gate: retained-name rebalancing, ties, NaN/missing prices, rights, cash-in-lieu, insufficient-eligible-name handling, dividend timing, and unsupported corporate-action behavior must be explicitly frozen before performance.
+- Primary inference uses the full 2018-2025 sample. The 2023-2025 later period is descriptive only and contains approximately 11 quarterly decision dates.
+- Run 1 must never be overwritten. Any later execution is Run 2 or later.
+- The personal live capital-risk limit is ₹5,000 cumulative loss on the initial ₹25,000 deployment; this is separate from strategy alpha and does not alter historical backtests.
+- The approximately 8% annual detectable-effect figure is a pre-run power/plausibility assumption and must be recomputed with the actual engine before Run 1.
+- The repository's 55 total membership transition rows contain exactly 42 transitions inside the frozen 2018-2025 research period. The 16 announcement/review rows are a different count.

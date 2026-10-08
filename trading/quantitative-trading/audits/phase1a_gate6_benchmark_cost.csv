@@ -1,0 +1,6 @@
+check,status,detail
+cost_date_coverage,PASS,6 date-effective intervals cover 2018-01-01 through 2025-12-31
+pre2020_stamp_sensitivity,PASS,state-agnostic sensitivity anchor explicitly labeled
+NIFTY_50_TRI,PASS,data\reference\nifty50_tri.csv
+NIFTY_50_EQUAL_WEIGHT_SECONDARY,PASS,data\reference\nifty50_equal_weight_tri.csv
+exposure_matched_formula,PASS,R_EM_t = w_t * R_NIFTY50_TRI_t + (1-w_t) * R_CASH_t

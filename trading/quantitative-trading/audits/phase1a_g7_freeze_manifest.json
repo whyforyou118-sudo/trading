@@ -1,0 +1,42 @@
+{
+  "schema": "phase1a-g7-freeze-v1",
+  "status": "PASS",
+  "performance_run_authorized": true,
+  "performance_run_executed": false,
+  "git_commit_sha": "88d49f5372f2110287ab2a8e7208bad46ce25fdc",
+  "working_tree_status": "DIRTY",
+  "config_sha256": "0943c5be6d7d74eca618764b6f99f4570a6b34b1ffbfb22aaca4a301de4312e8",
+  "frozen_primary": {
+    "universe": "NIFTY_50_PIT",
+    "formation_months": 12,
+    "skip_months": 1,
+    "holdings": 5,
+    "rebalance": "quarterly",
+    "capital_rs": 25000,
+    "execution": "next_actual_trading_day_open",
+    "price_mode": "RAW_UNADJUSTED",
+    "slippage_pct": 0.1,
+    "cost_model": "ZERODHA_DATE_EFFECTIVE",
+    "target_weight_pct": 20,
+    "direction": "long_only",
+    "leverage": "none",
+    "cash_return_assumption_pct": 0,
+    "unbuyable_policy": "NO_REPLACEMENT_RETAIN_CASH",
+    "live_max_cumulative_loss_rs": 5000
+  },
+  "required_artifact_sha256": {
+    "audits/phase1a_gate1_announcement_effective.csv": "64d5ee8aafbdf2f534b3242af17c3b7f8e5068b8abfd753ee08ac07a0e31a90b",
+    "audits/phase1a_gate3_replay_evidence.csv": "67245326a0314e5ef1f2024e723e853573823f47bf07758ee5f6e8ecbb6bc6ce",
+    "audits/phase1a_pit_decision_table.csv": "50dc118d7eff8cdcad689202860af6c1375315ad7f5a1e81d69754ae48564e8c",
+    "audits/phase1a_pit_report.csv": "4376d448d9c9abda9365a25d32840a622a2ff9cdbe4542363f6aac66951f1241",
+    "audits/phase1a_manifest.json": "624be901742f9cfa678733bd6fb5cc1462dd5751dbd8e5b28968888a213824f2",
+    "audits/phase05_top5_feasibility.csv": "48b5392ea260d5ec37e2e61345b0caec6c4804656474631ecac2d5e2eb48a8e2",
+    "data/reference/zerodha_delivery_cost_schedule.csv": "e180274eac52da5fe1a86276f656e4c70f7bb91dd17c36361260867f95d067a4",
+    "data/reference/nifty50_tri.csv": "5b638b203780521119f06bce79151c1e2395254e881c62a8cecef1a4d462b7da",
+    "data/reference/nifty50_equal_weight_tri.csv": "a0ce6725e39b5d6ea9cad6a9c4caed2ef66104220733e8ea827242d4ba7186c0",
+    "audits/phase1a_preflight_manifest.json": "b4bfbdac1a2e64d623812cc9bf6fb84dad148a81dbf32be1b6cb557df98e9136"
+  },
+  "failures": [],
+  "protected_holdout": "2023-01-01 through 2025-12-31",
+  "note": "Authorization means validation gates passed; it does not execute performance."
+}

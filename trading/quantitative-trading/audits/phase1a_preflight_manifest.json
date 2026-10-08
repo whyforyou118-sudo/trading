@@ -1,0 +1,53 @@
+{
+  "schema": "phase1a-final-preflight-v1",
+  "status": "PASS",
+  "performance_run_authorized": true,
+  "checks": [
+    {
+      "id": "P1",
+      "status": "PASS",
+      "detail": "PHASE 1A P1 \u2014 DATA VERIFICATION\nDates checked: 3\nFailures: 0\n2018-03-28: PASS\n2021-12-31: PASS\n2025-09-30: PASS\nSTATUS: PASS \u2014 data evidence verifies all three P1 spot-check dates."
+    },
+    {
+      "id": "P2",
+      "status": "PASS",
+      "detail": "PHASE 1A P2 \u2014 TRUNCATION INVARIANCE\nFull rows: 155\nTruncated rows: 155\nStatus: PASS"
+    },
+    {
+      "id": "P3",
+      "status": "PASS",
+      "detail": "production SecurityConversion replay passed"
+    },
+    {
+      "id": "P4",
+      "status": "PASS",
+      "detail": "PHASE 1A P4 \u2014 FULL RESEARCH-PERIOD MEMBERSHIP RECONCILIATION\nTotal membership transitions in repository: 55\nResearch-period transitions: 42\nExpected research-period transitions: 42\nFailures: 0\nArtifact: C:\\Users\\damar\\Downloads\\trading\\trading\\quantitative-trading\\audits\\phase1a_p4_membership_reconciliation.csv\nSTATUS: PASS \u2014 all 42 research-period transition rows reconcile."
+    },
+    {
+      "id": "P5",
+      "status": "PASS",
+      "detail": "PHASE 1A FINAL V6 CONTRACT\nConfig: C:\\Users\\damar\\Downloads\\trading\\trading\\quantitative-trading\\config\\phase1a_preregistration.json\nStatus: PASS"
+    },
+    {
+      "id": "P6",
+      "status": "PASS",
+      "detail": "Census diagnostic:\nPHASE 1A P6 \u2014 CORPORATE-ACTION CENSUS\nRaw NSE records: 18372\nPIT symbols ever observed: 45\nRelevant PIT-symbol actions: 469\nStructural/non-ordinary records: 34\nRelevant unresolved/special records: 5\n\nEVENT CLASS COUNTS\nDIVIDEND: 395\nADMINISTRATIVE: 40\nBONUS: 12\nBUYBACK: 7\nRIGHTS: 6\nSPLIT: 5\nSCHEME: 4\n\nRELEVANT SPECIAL-TREATMENT RECORDS\n2019-08-22 BRITANNIA SCHEME true true Scheme Of Arangement- Bonus - 1 Debenture For 1 Equity Share Held\n2021-05-25 BRITANNIA SCHEME true true Scheme Of Arangement- Bonus - 1 Debenture For 1 Equity Share Held\n2024-01-10 GRASIM RIGHTS true true Rights 6:179 @ Premium Rs 1810/-\n2024-07-26 TATACONSUM RIGHTS true true Rights 1:26 @ Premium Rs 817/-\n2025-11-17 ADANIENT RIGHTS true false Rights 3:25 @ Premium Rs 1799/-\n\nArtifact: C:\\Users\\damar\\Downloads\\trading\\trading\\quantitative-trading\\audits\\phase1a_p6_corporate_action_census.csv\nSTATUS: BLOCKED \u2014 economically material actions still require explicit treatment.\nSecurity-distribution treatment:\nPHASE 1A P6 \u2014 SECURITY DISTRIBUTION AUDIT\nExpected scheme rows: 2\nMatched NSE rows: 2\nBRITANNIA | 22-Aug-2019 |  Scheme Of Arangement- Bonus - 1 Debenture For 1 Equity Share Held\nBRITANNIA | 25-May-2021 |  Scheme Of Arangement- Bonus - 1 Debenture For 1 Equity Share Held\nBRITANNIA V6 selections: 1\nFirst V6 BRITANNIA selection: 2023-03-31 (execution 2023-04-03)\nPASS \u2014 no V6 BRITANNIA selection on/before 2019-08-22\nPASS \u2014 no V6 BRITANNIA selection on/before 2021-05-25\nTreatment: separate 5.5% unsecured, non-convertible, redeemable debenture; not an equity bonus.\nSTATUS: PASS \u2014 Britannia debenture distributions are path-conditionally irrelevant to the frozen V6 portfolio.\nRights treatment:\nata                1 archived first-session row(s) for TATACON-RE.\n  PASS    re_first_tradable_open       2024-08-05 open=303.00.\n  PASS    entitlement_rule             quantity(25)=0 (expected 0); quantity(26)=1 (expected 1).\n  PASS    fractional_entitlement_rule  Fractional RE entitlements are discarded via integer floor; no additional subscription is modeled.\n  PASS    portfolio_policy             Frozen policy: RE_RENOUNCE_AT_FIRST_TRADABLE_OPEN.\n  PASS    re_transaction_costs         RE STT seller rate=0.06250%; verified cost interval present=True.\n  PASS    ledger_integration           RightsEntitlement is integrated into the accounting ledger.\n  PASS    path_conditional_test        no-parent=0; one-ratio-parent=1.\n  PASS    first_open_slippage          execution price=302.697000.\n\nADANIENT | ex_date=2025-11-17 | record_date=2025-11-17\n  PASS    signal_factor                Verified NSE rights adjustment factor is available.\n  PASS    re_price_data                1 archived first-session row(s) for ADANI-RE.\n  PASS    re_first_tradable_open       2025-11-25 open=590.00.\n  PASS    entitlement_rule             quantity(24)=2 (expected 2); quantity(25)=3 (expected 3).\n  PASS    fractional_entitlement_rule  Fractional RE entitlements are discarded via integer floor; no additional subscription is modeled.\n  PASS    portfolio_policy             Frozen policy: RE_RENOUNCE_AT_FIRST_TRADABLE_OPEN.\n  PASS    re_transaction_costs         RE STT seller rate=0.10000%; verified cost interval present=True.\n  PASS    ledger_integration           RightsEntitlement is integrated into the accounting ledger.\n  PASS    path_conditional_test        no-parent=0; one-ratio-parent=3.\n  PASS    first_open_slippage          execution price=589.410000.\n\nSIGNAL TREATMENT: PASS \u2014 verified NSE rights adjustment factors are available.\nPORTFOLIO TREATMENT: PASS \u2014 all three rights events use the frozen renunciation policy.\nSTATUS: PASS \u2014 rights portfolio treatment is implemented and validated."
+    },
+    {
+      "id": "P7",
+      "status": "PASS",
+      "detail": "PHASE 1A GATE 6 \u2014 BENCHMARK / COST RECONCILIATION\nCost intervals covering frozen period: 6\nCost coverage failures: 0\nFull NIFTY 50 TRI artifact: PRESENT\nEqual-weight NIFTY 50 TRI artifact: PRESENT\nSTATUS: PASS"
+    },
+    {
+      "id": "P8",
+      "status": "PASS",
+      "detail": "PHASE 1A P8 \u2014 DIVIDEND INVARIANT\nDividend evidence rows: 2\nFailures: 0\nSTATUS: PASS"
+    },
+    {
+      "id": "P9",
+      "status": "PASS",
+      "detail": "PHASE 1A P9 \u2014 EXECUTION PRICE SOURCE\nSource: NSE historical daily price data\nField: OPEN\nSTATUS: PASS"
+    }
+  ],
+  "note": "This manifest authorizes nothing. Final V6 re-freeze must set performance_run_allowed=true only after this manifest is PASS."
+}

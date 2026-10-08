@@ -1,0 +1,38 @@
+{
+  "config": {
+    "path": "config\\phase1a_preregistration.json",
+    "sha256": "d79856fb3de58f2b5e3ea50f0ff3bf3ade8a252b4ecbdbf7b27e3159b7aad9f6"
+  },
+  "data": [
+    {
+      "path": "audits\\nse_trading_calendar_v3.csv",
+      "sha256": "ee05efb5a46157f028e5ec4ea60a1907e36f7d9ef77018f58228b78483ae33f4"
+    },
+    {
+      "path": "audits\\phase05_top5_feasibility.csv",
+      "sha256": "48b5392ea260d5ec37e2e61345b0caec6c4804656474631ecac2d5e2eb48a8e2"
+    },
+    {
+      "path": "audits\\pit_membership_reconstruction.csv",
+      "sha256": "bc446b78abf3ce15e84dd43f7586493d832866cb4c7b585b44900a1f5e0efffa"
+    }
+  ],
+  "frozen_primary": {
+    "capital": 25000,
+    "cost_model": "ZERODHA_DATE_EFFECTIVE",
+    "execution": "next_actual_trading_day_open",
+    "formation_months": 12,
+    "holdings": 5,
+    "rebalance": "quarterly",
+    "skip_months": 1,
+    "slippage": 0.001,
+    "universe": "NIFTY 50 PIT"
+  },
+  "git_commit_sha": "6d442e4b6877f1569726dac5b5841dac73a59aea",
+  "performance_run_allowed": false,
+  "schema": "phase1a-reproducibility-v1",
+  "seeds": {
+    "bootstrap": 20261007,
+    "random5_permutation": 20261007
+  }
+}

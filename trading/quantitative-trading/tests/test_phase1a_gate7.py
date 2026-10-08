@@ -20,6 +20,12 @@ def test_frozen_primary_contract():
         "price_mode": "RAW_UNADJUSTED",
         "slippage_pct": 0.1,
         "cost_model": "ZERODHA_DATE_EFFECTIVE",
+        "target_weight_pct": 20,
+        "direction": "long_only",
+        "leverage": "none",
+        "cash_return_assumption_pct": 0,
+        "unbuyable_policy": "NO_REPLACEMENT_RETAIN_CASH",
+        "live_max_cumulative_loss_rs": 5000,
     }
     assert EXPECTED_PRIMARY == expected
 

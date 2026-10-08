@@ -28,6 +28,7 @@ REQUIRED = [
     "data/reference/zerodha_delivery_cost_schedule.csv",
     "data/reference/nifty50_tri.csv",
     "data/reference/nifty50_equal_weight_tri.csv",
+    "audits/phase1a_preflight_manifest.json",
 ]
 
 EXPECTED_PRIMARY = {
@@ -41,6 +42,12 @@ EXPECTED_PRIMARY = {
     "price_mode": "RAW_UNADJUSTED",
     "slippage_pct": 0.1,
     "cost_model": "ZERODHA_DATE_EFFECTIVE",
+    "target_weight_pct": 20,
+    "direction": "long_only",
+    "leverage": "none",
+    "cash_return_assumption_pct": 0,
+    "unbuyable_policy": "NO_REPLACEMENT_RETAIN_CASH",
+    "live_max_cumulative_loss_rs": 5000,
 }
 
 
@@ -68,8 +75,8 @@ def main() -> int:
     failures: list[str] = []
     cfg = json.loads(CONFIG.read_text(encoding="utf-8"))
 
-    if cfg.get("review_resolution", {}).get("performance_run_allowed") is not False:
-        failures.append("preregistration performance_run_allowed must remain false before G7")
+    if cfg.get("review_resolution", {}).get("performance_run_allowed") is not True:
+        failures.append("final re-freeze must explicitly set performance_run_allowed=true")
     if cfg.get("frozen_primary") != EXPECTED_PRIMARY:
         failures.append("frozen_primary does not exactly match the registered V6 primary")
     if cfg.get("primary_unbuyable_policy") != "NO_REPLACEMENT_RETAIN_CASH":
@@ -92,6 +99,14 @@ def main() -> int:
         rows = read_csv(ROOT / "audits/phase1a_gate1_announcement_effective.csv")
         if not rows or any(r.get("status") != "PASS" for r in rows):
             failures.append("G1 artifact contains non-PASS rows")
+    if "audits/phase1a_preflight_manifest.json" in hashes:
+        preflight = json.loads((ROOT / "audits/phase1a_preflight_manifest.json").read_text(encoding="utf-8"))
+        if preflight.get("status") != "PASS":
+            failures.append("final P1-P9 preflight manifest is not PASS")
+        required_checks = {f"P{i}" for i in range(1, 10)}
+        reported_checks = {x.get("id") for x in preflight.get("checks", [])}
+        if required_checks - reported_checks:
+            failures.append("final P1-P9 preflight manifest is incomplete")
     if "audits/phase1a_gate3_replay_evidence.csv" in hashes:
         rows = read_csv(ROOT / "audits/phase1a_gate3_replay_evidence.csv")
         if not rows or any(r.get("status") != "PASS" for r in rows):

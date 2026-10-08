@@ -1,10 +1,11 @@
 from pathlib import Path
 import sys
+import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from portfolio.accounting import (
-    CostBreakdown, Dividend, PortfolioState, ShareRatioAction, Trade, apply_ledger,
+    CostBreakdown, Dividend, PortfolioState, SecurityConversion, ShareRatioAction, Trade, apply_ledger,
     reconcile_cash,
 )
 
@@ -55,3 +56,39 @@ def test_oversell_and_fractional_shares_fail_closed():
         pass
     else:
         raise AssertionError("fractional shares must fail")
+
+
+def test_security_conversion_uses_production_ledger_path():
+    state = apply_ledger(
+        0.0,
+        [
+            Trade("2020-01-01", "HDFC", "BUY", 25, 100.0),
+            SecurityConversion("2020-02-01", "HDFC", "HDFCBANK", 42, 25),
+        ],
+    )
+    assert state.shares("HDFC") == 0
+    assert state.shares("HDFCBANK") == 42
+
+
+def test_security_conversion_rejects_fractional_result():
+    with pytest.raises(ValueError):
+        apply_ledger(
+            0.0,
+            [
+                Trade("2020-01-01", "OLD", "BUY", 1, 100.0),
+                SecurityConversion("2020-02-01", "OLD", "NEW", 1, 2),
+            ],
+        )
+
+def test_ex_date_dividend_precedes_same_day_open_trade():
+    state = apply_ledger(
+        0.0,
+        [
+            Trade("2020-01-01", "ABC", "BUY", 10, 100.0),
+            Dividend("2020-01-02", "ABC", 5.0),
+            Trade("2020-01-02", "ABC", "SELL", 10, 101.0),
+        ],
+    )
+    assert state.cash == 60.0
+    assert state.shares("ABC") == 0
+    assert state.cumulative_dividends == 50.0

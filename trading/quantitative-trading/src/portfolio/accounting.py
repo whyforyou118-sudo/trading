@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 from math import isfinite
 from typing import Dict, Iterable, Mapping, Sequence, Union
 
+from .rights import RightsEntitlement
+
 
 @dataclass(frozen=True)
 class CostBreakdown:
@@ -64,6 +66,9 @@ class Trade:
 
 @dataclass(frozen=True)
 class Dividend:
+    # date is the ex/entitlement date used by the historical ledger.
+    # Holdings at the prior close are entitled; same-day open trades do not
+    # change the entitlement for that ex-date dividend.
     date: str
     symbol: str
     per_share: float
@@ -71,6 +76,29 @@ class Dividend:
     def __post_init__(self) -> None:
         if not isfinite(float(self.per_share)) or self.per_share < 0:
             raise ValueError("per_share must be finite and non-negative")
+
+
+@dataclass(frozen=True)
+class SecurityConversion:
+    """Convert one security into another using an integer share ratio.
+
+    Example: 25 old shares -> 42 new shares is numerator=42, denominator=25.
+    The conversion is fail-closed if the resulting share count is fractional.
+    """
+    date: str
+    old_symbol: str
+    new_symbol: str
+    numerator: int
+    denominator: int
+
+    def __post_init__(self) -> None:
+        if not self.old_symbol or not self.new_symbol:
+            raise ValueError("security symbols cannot be empty")
+        if (isinstance(self.numerator, bool) or isinstance(self.denominator, bool)
+                or self.numerator <= 0 or self.denominator <= 0
+                or int(self.numerator) != self.numerator
+                or int(self.denominator) != self.denominator):
+            raise ValueError("conversion ratio terms must be positive whole numbers")
 
 
 @dataclass(frozen=True)
@@ -88,7 +116,7 @@ class ShareRatioAction:
             raise ValueError("share ratio terms must be positive whole numbers")
 
 
-LedgerEvent = Union[Trade, Dividend, ShareRatioAction]
+LedgerEvent = Union[Trade, Dividend, ShareRatioAction, SecurityConversion, RightsEntitlement]
 
 
 @dataclass
@@ -123,11 +151,30 @@ class PortfolioState:
                 self.positions.pop(trade.symbol, None)
         self.cumulative_costs = add_costs(self.cumulative_costs, trade.costs)
 
+    def apply_rights_entitlement(self, event: RightsEntitlement) -> int:
+        parent_shares = self.shares(event.parent_symbol)
+        quantity = event.quantity(parent_shares)
+        if quantity:
+            self.positions[event.re_symbol] = self.shares(event.re_symbol) + quantity
+        return quantity
+
     def apply_dividend(self, event: Dividend) -> float:
         credit = self.shares(event.symbol) * event.per_share
         self.cash += credit
         self.cumulative_dividends += credit
         return credit
+
+    def apply_security_conversion(self, event: SecurityConversion) -> None:
+        old = self.shares(event.old_symbol)
+        numerator = old * event.numerator
+        if numerator % event.denominator:
+            raise ValueError(
+                f"non-integral security conversion for {event.old_symbol} -> {event.new_symbol}"
+            )
+        new = numerator // event.denominator
+        self.positions.pop(event.old_symbol, None)
+        if new:
+            self.positions[event.new_symbol] = self.shares(event.new_symbol) + new
 
     def apply_share_ratio(self, event: ShareRatioAction) -> None:
         old = self.shares(event.symbol)
@@ -160,22 +207,27 @@ def add_costs(a: CostBreakdown, b: CostBreakdown) -> CostBreakdown:
     )
 
 
-def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent]) -> PortfolioState:
+def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent], initial_positions: Mapping[str, int] | None = None) -> PortfolioState:
     """Replay a complete event ledger in deterministic date/priority order.
 
-    Same-day priority is corporate action, trade, dividend. This makes the
-    entitlement convention explicit and deterministic for synthetic tests;
-    historical ingestion must encode the source's ex/record-date convention
-    before using this function.
+    Same-day priority is corporate action, rights entitlement, dividend, trade. Dividend events
+    represent ex/entitlement dates, so shares held at the prior close receive
+    the dividend even when a same-day open trade subsequently changes the
+    position. Historical ingestion must reconcile ex/record/payment dates from
+    authoritative source records before using this function.
     """
-    state = PortfolioState(cash=initial_cash)
-    priority = {ShareRatioAction: 0, Trade: 1, Dividend: 2}
+    state = PortfolioState(cash=initial_cash, positions=dict(initial_positions or {}))
+    priority = {SecurityConversion: 0, ShareRatioAction: 0, RightsEntitlement: 0, Dividend: 1, Trade: 2}
     ordered = sorted(enumerate(events), key=lambda x: (x[1].date, priority[type(x[1])], x[0]))
     for _, event in ordered:
         if isinstance(event, Trade):
             state.apply_trade(event)
+        elif isinstance(event, RightsEntitlement):
+            state.apply_rights_entitlement(event)
         elif isinstance(event, Dividend):
             state.apply_dividend(event)
+        elif isinstance(event, SecurityConversion):
+            state.apply_security_conversion(event)
         else:
             state.apply_share_ratio(event)
     return state
