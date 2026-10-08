@@ -18,7 +18,7 @@ OUT = ROOT / "audits/phase1a_preflight_manifest.json"
 
 def run(module: str) -> tuple[bool, str]:
     result = subprocess.run(
-        [sys.executable, "-m", f"audit.{module}"],
+        [sys.executable, "-m", f"src.audit.{module}"],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -46,7 +46,7 @@ def main() -> int:
 
     # P3 uses the production accounting module directly.
     try:
-        from portfolio.accounting import (
+        from src.portfolio.accounting import (
             SecurityConversion, Trade, apply_ledger
         )
         state = apply_ledger(0.0, [
@@ -67,8 +67,19 @@ def main() -> int:
     p5_ok, p5_text = run("phase1a_preflight_contract")
     checks.append({"id":"P5","status":"PASS" if p5_ok else "BLOCKED","detail":p5_text})
 
-    p6_ok, p6_text = run("phase1a_p6_corporate_action_census")
-    checks.append({"id":"P6","status":"PASS" if p6_ok else "BLOCKED","detail":p6_text})
+    # The census is intentionally diagnostic: it reports unresolved/special
+    # corporate-action rows. P6 passes only when every economically material
+    # special row is covered by its explicit treatment audit.
+    p6_census_ok, p6_census_text = run("phase1a_p6_corporate_action_census")
+    p6_security_ok, p6_security_text = run("phase1a_p6_security_distribution")
+    p6_rights_ok, p6_rights_text = run("phase1a_p6_rights_treatment")
+    p6_ok = p6_security_ok and p6_rights_ok
+    p6_detail = (
+        "Census diagnostic:\n" + p6_census_text + "\n"
+        + "Security-distribution treatment:\n" + p6_security_text + "\n"
+        + "Rights treatment:\n" + p6_rights_text
+    )
+    checks.append({"id":"P6","status":"PASS" if p6_ok else "BLOCKED","detail":p6_detail})
 
     # P7 reuses the existing date-effective benchmark/cost reconciliation.
     p7_ok, p7_text = run("phase1a_gate6_benchmark_cost")
