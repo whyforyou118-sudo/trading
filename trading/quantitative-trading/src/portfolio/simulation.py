@@ -44,6 +44,8 @@ def plan_and_execute_at_open(
         raise ValueError("execution_date must be after decision_date")
     if state.cash < 0:
         raise ValueError("starting cash cannot be negative")
+    if not ranked_symbols:
+        raise ValueError("empty eligible ranking requires explicit frozen-policy handling")
 
     # A current holding without a raw open is not assigned a guessed mark.
     pretrade_nav = mark_to_market(state, execution_opens)
@@ -69,7 +71,8 @@ def plan_and_execute_at_open(
         execution_date=execution_date,
         mark_prices=execution_opens,
     )
-    # Guard the key contract: planner capital equals execution-open NAV.
-    if abs(plan.targets[0].target_notional - pretrade_nav * target_weight) > 1e-7:
+    # Assert the contract for every selected target, including a short list.
+    expected_target = pretrade_nav * target_weight
+    if any(abs(t.target_notional - expected_target) > 1e-7 for t in plan.targets):
         raise AssertionError("target notional does not equal execution-open NAV weight")
     return RebalanceStep(plan=plan, execution=execution, pretrade_nav=pretrade_nav)
