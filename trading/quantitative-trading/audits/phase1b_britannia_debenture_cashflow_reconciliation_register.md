@@ -62,3 +62,29 @@ Do not substitute a coupon-rate calculation for a confirmed cash payment when th
 ## 4. Gate
 
 **Current result: BLOCKED.** This register is a research checklist, not approval to run the historical simulation. Keep Performance Run 1 unauthorized until coupon amounts/dates, redemption cash flows, entitlement counts, NAV continuity, and listing-only sensitivity are validated and the final freeze is complete.
+
+
+## 5. Additional primary-source search pass (9 October 2026)
+
+This pass found additional issuer/exchange-hosted disclosures, but **did not locate an executed debenture trust deed or an issuer payment advice that states exact per-debenture coupon cash for every payment**. The accounting gate therefore remains blocked.
+
+### 2019 issue — additional evidence
+
+- Britannia's audited-results filing dated 2 June 2020 confirms 240,318,294 debentures of ₹30 each, coupon 8% p.a., annual interest, and first interest due on 28 August 2020: https://nsearchives.nseindia.com/corporate/BRITANNIA_02062020171301_BRITANNIA.pdf
+- Britannia's Q2 FY2021–22 results filing says second-year interest was paid on 30 August 2021 because 28 August 2021 was a bank holiday; it states the third-year interest plus ₹30 principal was due on 28 August 2022: https://nsearchives.nseindia.com/corporate/BILFinancialResults30092021signed_08112021153437.pdf
+- Britannia's 2022–23 annual report says the 2019 issue was redeemed on 26 August 2022 and third-year interest plus redemption was paid to holders on the 22 August 2022 record date: https://nsearchives.nseindia.com/corporate/BRITANNIA_03082023000240_NSEAnnualReportSigned.pdf
+- These records corroborate issue size and payment chronology, but do not provide the exact coupon paid per debenture. The offering memorandum's actual-days-in-a-365/366-day-year wording remains the relevant disclosed basis; the governing calculation and exact cash paid still require reconciliation.
+
+### 2021 issue — additional evidence
+
+- The issuer's 3 June 2021 outcome filing confirms 5.5% p.a., annual coupon payments after each 12-calendar-month period from allotment, allotment date 3 June 2021 and redemption date 3 June 2024: https://archives.nseindia.com/corporate/BRITANNIA_03062021131616_OUTCOMEOFBDC03062021.pdf
+- Britannia's 2022–23 annual report confirms first-year interest was paid on 3 June 2022 to record-date holders as of 27 May 2022: https://nsearchives.nseindia.com/corporate/BRITANNIA_03082023000240_NSEAnnualReportSigned.pdf
+- These records corroborate the contractual schedule but do not resolve the CDSL Actual/365 versus information-memorandum Actual/Actual conflict or establish exact per-debenture cash for all three coupon events.
+
+### Evidence still required
+
+1. Executed debenture trust deed or definitive instrument terms for each ISIN, including the operative day-count clause and business-day adjustment.
+2. Issuer/registrar/debenture-trustee payment advice or another primary record giving the exact per-debenture coupon for each event, or a reproducible calculation explicitly reconciled to the issuer's actual paid amount.
+3. Confirmation of whether the final coupon is a separate cash payment or included in the redemption amount for each instrument.
+
+**No coupon values were inferred or entered in this pass.** Do not use nominal rate × face value as a substitute for the verified cash flow, and do not use rounded issue-wide totals to reverse-engineer exact per-unit payments.
