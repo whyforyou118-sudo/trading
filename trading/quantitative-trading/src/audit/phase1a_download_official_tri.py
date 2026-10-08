@@ -85,6 +85,57 @@ def discover_names(session: requests.Session) -> dict[str, str]:
         "NIFTY50 EQUAL WEIGHT": "NIFTY50 EQUAL WEIGHT",
     }
 
+
+def fetch_tri(session: requests.Session, index_name: str) -> list[dict]:
+    """Fetch one official gross-TRI series in <=365-day chunks."""
+    rows: list[dict] = []
+    cursor = START
+
+    while cursor <= END:
+        chunk_end = min(cursor + timedelta(days=364), END)
+        inner = (
+            "{'name':'"
+            + index_name
+            + "','startDate':'"
+            + cursor.strftime("%d %b %Y")
+            + "','endDate':'"
+            + chunk_end.strftime("%d %b %Y")
+            + "','indexName':'"
+            + index_name
+            + "'}"
+        )
+        chunk = post_json(session, TRI_URL, {"cinfo": inner})
+        if not chunk:
+            raise RuntimeError(
+                f"No TRI rows returned for {index_name}: {cursor} to {chunk_end}"
+            )
+        rows.extend(chunk)
+        cursor = chunk_end + timedelta(days=1)
+
+    values: dict[str, float] = {}
+    for row in rows:
+        raw_date = row.get("Date")
+        raw_tri = row.get("TotalReturnsIndex")
+        if raw_date is None or raw_tri in (None, ""):
+            continue
+        dt = datetime.strptime(str(raw_date), "%d %b %Y").date()
+        if START <= dt <= END:
+            values[dt.isoformat()] = float(raw_tri)
+
+    ordered = [{"date": d, "tri": values[d]} for d in sorted(values)]
+    if not ordered:
+        raise RuntimeError(f"No usable TRI observations for {index_name}")
+    return ordered
+
+
+def write_csv(path: Path, rows: list[dict], index_name: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        handle.write("index_name,date,tri\n")
+        for row in rows:
+            handle.write(f"{index_name},{row['date']},{row['tri']:.8f}\n")
+
+
 def main() -> None:
     session = requests.Session()
     session.headers.update(
