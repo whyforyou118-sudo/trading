@@ -129,3 +129,38 @@ def test_missing_signal_prices_exclude_name_from_ranking():
     assert rows[0].signal_eligible_count == 1
     assert rows[0].selected_symbols == ("AAA",)
     assert rows[0].status == "PASS"
+
+def test_explicit_decision_dates_limit_audit_scope():
+    from calendar import monthrange
+
+    dates = [
+        date(year, month, monthrange(year, month)[1])
+        for year in (2023, 2024)
+        for month in range(1, 13)
+    ]
+    dates.extend([date(2024, 4, 1), date(2024, 7, 1)])
+    start_date = date(2023, 2, 28)
+    end_date = date(2024, 2, 29)
+    decision = date(2024, 3, 31)
+    execution = date(2024, 4, 1)
+    store = FakeStore({
+        start_date: {"AAA": SimpleNamespace(close=100)},
+        end_date: {"AAA": SimpleNamespace(close=120)},
+        execution: {"AAA": SimpleNamespace(open=125)},
+    })
+
+    rows = build_quarterly_selection_audit(
+        trading_dates=dates,
+        price_store=store,
+        baseline=[Member("AAA", "A", "ISIN-A")],
+        transitions=[],
+        identity_events=[],
+        start=date(2023, 1, 1),
+        end=date(2024, 6, 30),
+        holdings=1,
+        decision_dates=[decision],
+    )
+
+    assert [row.decision_date for row in rows] == [decision]
+    assert rows[0].execution_date == execution
+
