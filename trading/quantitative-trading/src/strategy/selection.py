@@ -53,6 +53,7 @@ def build_quarterly_selection_audit(
     skip_months: int = 1,
     holdings: int = 5,
     decision_dates: Sequence[date] | None = None,
+    signal_price_adjuster: Callable[[date, Mapping[str, object], Mapping[str, object]], tuple[Mapping[str, object], Mapping[str, object]]] | None = None,
 ) -> list[QuarterlySelection]:
     """Build deterministic signal/ranking rows without computing performance.
 
