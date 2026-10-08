@@ -40,7 +40,7 @@ def test_engine_sells_before_buys_and_resizes_retained_name():
     state = PortfolioState(cash=5000, positions={"AAA":20, "OLD":10})
     plan = plan_rebalance(
         decision_date=date(2025,3,31), execution_date=date(2025,4,1),
-        capital=25000, starting_cash=5000,
+        capital=8000, starting_cash=5000,
         starting_positions={"AAA":20,"OLD":10},
         ranked_symbols=[("AAA",1),("BBB",2)],
         execution_opens={"AAA":100,"BBB":250,"OLD":100},
@@ -51,8 +51,8 @@ def test_engine_sells_before_buys_and_resizes_retained_name():
         execution_date=date(2025,4,1),
         mark_prices={"AAA":100,"BBB":250,"OLD":100},
     )
-    assert result.state.positions["AAA"] == 125
-    assert result.state.positions["BBB"] == 50
+    assert result.state.positions["AAA"] == 40
+    assert result.state.positions["BBB"] == 16
     assert "OLD" not in result.state.positions
     assert result.trades[0].side == "SELL"
 
