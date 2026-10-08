@@ -4,8 +4,8 @@ Policy:
 - Entitlements are based on parent shares held on the entitlement date.
 - Fractional entitlements are ignored; no synthetic additional subscription.
 - REs are renounced (sold) at the first actual tradable session's raw open.
-- The normal date-effective delivery cost model applies, including the frozen
-  0.10% slippage as an explicit cost. The execution price remains the raw open.
+- The date-effective delivery cost model applies the frozen 0.10% slippage as
+  an explicit cost. The ledger trade price remains the raw open.
 - Partly-paid rights are not subscribed, so no later calls are due.
 """
 from __future__ import annotations
@@ -43,8 +43,8 @@ class RightsEntitlement:
     def quantity(self, parent_shares: int) -> int:
         if isinstance(parent_shares, bool) or parent_shares < 0 or int(parent_shares) != parent_shares:
             raise ValueError("parent_shares must be a non-negative whole number")
-        # The issuer terms for the registered Phase 1A events ignore fractional
-        # entitlements; do not invent cash-in-lieu or extra subscription shares.
+        # Registered issuer terms ignore fractional entitlements; do not invent
+        # cash-in-lieu or additional subscription shares.
         return (int(parent_shares) * self.numerator) // self.denominator
 
 
@@ -52,8 +52,10 @@ class RightsEntitlement:
 class RightsRenunciation:
     """Sale instruction for an entitlement on its first tradable session.
 
-    The raw exchange open is passed as Trade.price. Slippage is booked by the
-    cost model, not applied to the price, to prevent double counting.
+    build_trade uses the raw exchange open as Trade.price and books slippage
+    as a transaction cost. execution_price is retained only as a legacy
+    effective-price diagnostic; do not combine it with build_trade because
+    that would double-count slippage.
     """
     entitlement: RightsEntitlement
     first_tradable_date: str
@@ -73,8 +75,12 @@ class RightsRenunciation:
         if not isfinite(float(self.slippage_pct)) or self.slippage_pct < 0:
             raise ValueError("slippage_pct must be finite and non-negative")
 
+    def execution_price(self) -> float:
+        """Legacy diagnostic: raw open less slippage, not a ledger trade price."""
+        return float(self.first_tradable_open) * (1.0 - float(self.slippage_pct))
+
     def build_trade(self, parent_shares: int, cost_model: "DeliveryCostModel"):
-        """Return the costed SELL trade, or None when the entitlement is zero."""
+        """Return the costed SELL trade at raw open, or None for zero entitlement."""
         from .accounting import Trade
 
         quantity = self.entitlement.quantity(parent_shares)
