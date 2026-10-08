@@ -52,6 +52,7 @@ def build_quarterly_selection_audit(
     formation_months: int = 12,
     skip_months: int = 1,
     holdings: int = 5,
+    decision_dates: Sequence[date] | None = None,
 ) -> list[QuarterlySelection]:
     """Build deterministic signal/ranking rows without computing performance.
 
@@ -69,7 +70,22 @@ def build_quarterly_selection_audit(
         raise ValueError("start must not be after end")
 
     ends = month_ends(dates)
-    decisions = quarterly_decision_dates(dates, start, end)
+    if decision_dates is None:
+        decisions = quarterly_decision_dates(dates, start, end)
+    else:
+        calendar_dates = set(dates)
+        decisions = sorted(set(decision_dates))
+        invalid_dates = [
+            d for d in decisions
+            if d not in calendar_dates
+            or not start <= d <= end
+            or d.month not in (3, 6, 9, 12)
+        ]
+        if invalid_dates:
+            raise ValueError(
+                "explicit decision_dates contain dates outside the quarterly "
+                f"trading calendar or requested interval: {invalid_dates}"
+            )
     if not decisions:
         raise ValueError("no quarterly decision dates in requested interval")
 
