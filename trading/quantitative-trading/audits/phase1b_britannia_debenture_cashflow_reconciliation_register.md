@@ -33,10 +33,12 @@
 - Allotment / deemed issue date: 3 June 2021.
 - First listing/trading date: 20 July 2021.
 - First-year interest: issuer annual-report disclosure says paid on 3 June 2022 to holders on record date 27 May 2022.
-- Second-year interest: **PAYMENT DATE AND AMOUNT REQUIRE PRIMARY-SOURCE CONFIRMATION**.
+- Second-year interest: CDSL's corporate-bond database records record date 17 May 2023, due date and actual payment date 3 June 2023, and aggregate interest paid of ₹38,42,00,000 (displayed as ₹384,200,000). The page's amount is rounded at issue level, so it confirms the payment event but does not establish the exact paid amount per debenture. The contractual simple annual coupon calculation is ₹29 × 5.5% = ₹1.595 for a standard 365-day year; use ₹1.595 in the ledger only after reconciling the governing terms and issuer payment notice, and do not treat the rounded aggregate as exact per-unit evidence.
 - Third-year interest and redemption: due/remitted on 3 June 2024; principal is ₹29 per debenture. The 2024–25 annual report says ₹7,47,549 of third-year interest and ₹1,46,62,690 of redemption amount relating to the issue were remitted to IEPF on 3 June 2024; these are unclaimed aggregate amounts, not the total issue-wide coupon.
-- Exact per-debenture amount for each payment: **PENDING PRIMARY-SOURCE RECONCILIATION**.
+- First-year standard annual coupon calculation: ₹29 × 5.5% = ₹1.595 per debenture for a 365-day period; exact payment-level reconciliation remains pending.
+- Exact per-debenture amount for each payment, especially the third-year leap-year period: **PENDING PRIMARY-SOURCE RECONCILIATION**.
 - Primary references:
+  - CDSL corporate-bond database, including payment status for 3 June 2023: https://www.cdslindia.com/CorporateBond/CorpBondDatabase.aspx?ISIN=INE216A08027
   - 2022–23 annual report (first-year interest paid 3 June 2022): https://nsearchives.nseindia.com/corporate/BRITANNIA_03082023000240_NSEAnnualReportSigned.pdf
   - 2023–24 annual report (third-year due date): https://nsearchives.nseindia.com/annual_reports/AR_24587_BRITANNIA_2023_2024_1907202401243.pdf
   - 2024–25 annual-report notice (unclaimed third-year interest/redemption remitted to IEPF): https://nsearchives.nseindia.com/corporate/BRITANNIA1_19072025235052_Intimation_Signed.pdf
