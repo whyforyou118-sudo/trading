@@ -34,8 +34,12 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     if not rows:
         raise ValueError(f"refusing to write empty audit: {path}")
     path.parent.mkdir(parents=True, exist_ok=True)
+    # Event audit rows are intentionally heterogeneous: unapplied events have
+    # only the base fields, while applied events also record the factor/value.
+    # Build a stable union schema so csv.DictWriter does not reject later rows.
+    fieldnames = list(dict.fromkeys(key for row in rows for key in row))
     with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="raise")
         writer.writeheader()
         writer.writerows(rows)
 
