@@ -73,7 +73,8 @@ def main() -> int:
     p6_census_ok, p6_census_text = run("phase1a_p6_corporate_action_census")
     p6_security_ok, p6_security_text = run("phase1a_p6_security_distribution")
     p6_rights_ok, p6_rights_text = run("phase1a_p6_rights_treatment")
-    p6_ok = p6_security_ok and p6_rights_ok
+    # The census itself must pass; treatment sub-audits cannot silently override unresolved records.
+    p6_ok = p6_census_ok and p6_security_ok and p6_rights_ok
     p6_detail = (
         "Census diagnostic:\n" + p6_census_text + "\n"
         + "Security-distribution treatment:\n" + p6_security_text + "\n"

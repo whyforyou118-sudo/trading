@@ -60,6 +60,8 @@ def execute_rebalance(
         positions=dict(state.positions),
         cumulative_costs=state.cumulative_costs,
         cumulative_dividends=state.cumulative_dividends,
+        dividend_receivable=state.dividend_receivable,
+        pending_dividends=dict(state.pending_dividends),
         applied_event_ids=set(state.applied_event_ids),
     )
     executed: list[Trade] = []

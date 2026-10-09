@@ -7,6 +7,7 @@ mark-to-market NAV.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from math import isfinite
 from typing import Dict, Iterable, Mapping, Sequence, Union
 
@@ -76,6 +77,45 @@ class Dividend:
     def __post_init__(self) -> None:
         if not isfinite(float(self.per_share)) or self.per_share < 0:
             raise ValueError("per_share must be finite and non-negative")
+
+
+@dataclass(frozen=True)
+class DividendEntitlement:
+    """Accrue a dividend on its entitlement date; do not make it spendable yet."""
+    event_id: str
+    date: str
+    symbol: str
+    per_share: float
+    payment_date: str
+    source_ref: str
+
+    def __post_init__(self) -> None:
+        _validate_event_identity(self.event_id, self.date, self.source_ref)
+        try:
+            payment = date.fromisoformat(self.payment_date)
+            entitlement = date.fromisoformat(self.date)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("dividend dates must be ISO YYYY-MM-DD") from exc
+        if payment < entitlement:
+            raise ValueError("dividend payment_date cannot precede entitlement date")
+        if not self.symbol:
+            raise ValueError("dividend symbol cannot be empty")
+        if not isfinite(float(self.per_share)) or self.per_share < 0:
+            raise ValueError("dividend per_share must be finite and non-negative")
+
+
+@dataclass(frozen=True)
+class DividendPayment:
+    """Pay a previously accrued dividend receivable into portfolio cash."""
+    event_id: str
+    date: str
+    entitlement_event_id: str
+    source_ref: str
+
+    def __post_init__(self) -> None:
+        _validate_event_identity(self.event_id, self.date, self.source_ref)
+        if not self.entitlement_event_id:
+            raise ValueError("entitlement_event_id is required")
 
 
 @dataclass(frozen=True)
@@ -233,7 +273,7 @@ def debenture_mark_price(
     return float(raw_market_price)
 
 
-LedgerEvent = Union[Trade, Dividend, ShareRatioAction, SecurityConversion, RightsEntitlement, DebentureEntitlement, DebentureCoupon, DebentureRedemption]
+LedgerEvent = Union[Trade, Dividend, DividendEntitlement, DividendPayment, ShareRatioAction, SecurityConversion, RightsEntitlement, DebentureEntitlement, DebentureCoupon, DebentureRedemption]
 
 
 @dataclass
@@ -242,11 +282,19 @@ class PortfolioState:
     positions: Dict[str, int] = field(default_factory=dict)
     cumulative_costs: CostBreakdown = field(default_factory=CostBreakdown)
     cumulative_dividends: float = 0.0
+    dividend_receivable: float = 0.0
+    pending_dividends: Dict[str, float] = field(default_factory=dict)
     applied_event_ids: set[str] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         if not isfinite(float(self.cash)):
             raise ValueError("cash must be finite")
+        if not isfinite(float(self.dividend_receivable)) or self.dividend_receivable < -1e-9:
+            raise ValueError("dividend receivable must be finite and non-negative")
+        if any(not key or not isfinite(float(value)) or value < 0 for key, value in self.pending_dividends.items()):
+            raise ValueError("pending dividends must have non-empty IDs and non-negative finite amounts")
+        if abs(sum(self.pending_dividends.values()) - self.dividend_receivable) > 1e-6:
+            raise ValueError("pending dividend amounts must reconcile to dividend receivable")
         for symbol, qty in self.positions.items():
             if not symbol or isinstance(qty, bool) or qty < 0 or int(qty) != qty:
                 raise ValueError("positions must contain non-negative whole shares")
@@ -310,10 +358,34 @@ class PortfolioState:
         return quantity
 
     def apply_dividend(self, event: Dividend) -> float:
+        """Legacy immediate-credit primitive; historical runs must use dated entitlement/payment events."""
         credit = self.shares(event.symbol) * event.per_share
         self.cash += credit
         self.cumulative_dividends += credit
         return credit
+
+    def apply_dividend_entitlement(self, event: DividendEntitlement) -> float:
+        if event.event_id in self.applied_event_ids:
+            raise ValueError(f"duplicate ledger event_id: {event.event_id}")
+        amount = self.shares(event.symbol) * event.per_share
+        self.pending_dividends[event.event_id] = amount
+        self.dividend_receivable += amount
+        self.cumulative_dividends += amount
+        self.applied_event_ids.add(event.event_id)
+        return amount
+
+    def apply_dividend_payment(self, event: DividendPayment) -> float:
+        if event.event_id in self.applied_event_ids:
+            raise ValueError(f"duplicate ledger event_id: {event.event_id}")
+        if event.entitlement_event_id not in self.pending_dividends:
+            raise ValueError(f"dividend payment has no outstanding entitlement: {event.entitlement_event_id}")
+        amount = self.pending_dividends.pop(event.entitlement_event_id)
+        self.dividend_receivable -= amount
+        if abs(self.dividend_receivable) < 1e-9:
+            self.dividend_receivable = 0.0
+        self.cash += amount
+        self.applied_event_ids.add(event.event_id)
+        return amount
 
     def apply_security_conversion(self, event: SecurityConversion) -> None:
         old = self.shares(event.old_symbol)
@@ -345,7 +417,7 @@ class PortfolioState:
         invalid = [s for s, p in prices.items() if not isfinite(float(p)) or p <= 0]
         if invalid:
             raise ValueError(f"invalid mark price(s): {invalid}")
-        return self.cash + sum(qty * prices[symbol] for symbol, qty in self.positions.items())
+        return self.cash + self.dividend_receivable + sum(qty * prices[symbol] for symbol, qty in self.positions.items())
 
 
 def add_costs(a: CostBreakdown, b: CostBreakdown) -> CostBreakdown:
@@ -370,8 +442,8 @@ def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent], initial_pos
     state = PortfolioState(cash=initial_cash, positions=dict(initial_positions or {}))
     priority = {
         SecurityConversion: 0, ShareRatioAction: 0, RightsEntitlement: 0,
-        DebentureEntitlement: 1, DebentureCoupon: 1, DebentureRedemption: 1,
-        Dividend: 1, Trade: 2,
+        DividendEntitlement: 1, DebentureEntitlement: 1, DebentureCoupon: 1,
+        DebentureRedemption: 1, Dividend: 1, DividendPayment: 2, Trade: 3,
     }
     ordered = sorted(enumerate(events), key=lambda x: (x[1].date, priority[type(x[1])], x[0]))
     for _, event in ordered:
@@ -385,6 +457,10 @@ def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent], initial_pos
             state.apply_debenture_coupon(event)
         elif isinstance(event, DebentureRedemption):
             state.apply_debenture_redemption(event)
+        elif isinstance(event, DividendEntitlement):
+            state.apply_dividend_entitlement(event)
+        elif isinstance(event, DividendPayment):
+            state.apply_dividend_payment(event)
         elif isinstance(event, Dividend):
             state.apply_dividend(event)
         elif isinstance(event, SecurityConversion):
