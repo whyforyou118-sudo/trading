@@ -197,3 +197,27 @@ def test_selection_adjuster_does_not_change_raw_execution_open():
     assert result[0].selected_symbols == ("BRITANNIA",)
     assert result[0].missing_execution_opens == ()
     assert store.execution_open == pytest.approx(100.0)
+
+
+
+def test_audit_csv_writer_accepts_heterogeneous_event_rows(tmp_path):
+    import csv
+    from audit.phase1b_britannia_signal_adjustment_audit import write_csv
+
+    output = tmp_path / "events.csv"
+    write_csv(output, [
+        {"event_id": "event-a", "applied": False, "reason": "NOT_YET_OCCURRED"},
+        {
+            "event_id": "event-b",
+            "applied": True,
+            "reason": "ADJUSTED",
+            "factor_applied_to_pre_event_equity_prices": 0.99,
+        },
+    ])
+
+    with output.open("r", encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+
+    assert rows[0]["event_id"] == "event-a"
+    assert rows[0]["factor_applied_to_pre_event_equity_prices"] == ""
+    assert rows[1]["factor_applied_to_pre_event_equity_prices"] == "0.99"
