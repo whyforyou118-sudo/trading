@@ -37,7 +37,12 @@ RANKED = tuple((symbol, i) for i, symbol in enumerate(SYMBOLS, 1))
 
 
 def _session(opens, closes=None):
-    return SessionPrices(opens=dict(opens), closes=dict(closes if closes is not None else opens))
+    return SessionPrices(
+        opens=dict(opens),
+        closes=dict(closes if closes is not None else opens),
+        source_ref="synthetic test fixture",
+        verified=True,
+    )
 
 
 def _prices():
@@ -53,11 +58,18 @@ def _prices():
     }
 
 
-def _instructions():
-    return (
-        RebalanceInstruction(D1, E1, RANKED),
-        RebalanceInstruction(D2, E2, RANKED),
+def _instruction(decision, execution, ranked=RANKED):
+    return RebalanceInstruction(
+        decision_date=decision,
+        execution_date=execution,
+        ranked_symbols=ranked,
+        source_ref="synthetic selection fixture",
+        verified=True,
     )
+
+
+def _instructions():
+    return (_instruction(D1, E1), _instruction(D2, E2))
 
 
 def test_dividend_entitlement_is_receivable_until_payment_date():
@@ -151,6 +163,31 @@ def test_historical_runner_rejects_legacy_ex_date_cash_credit():
         HistoricalEvent("DIV-LEGACY", "unacceptable legacy event", legacy, True)
 
 
+def test_session_prices_require_verified_provenance():
+    with pytest.raises(ValueError, match="source_ref"):
+        SessionPrices(opens={"AAA": 10.0}, closes={"AAA": 10.0}, source_ref="", verified=False)
+    with pytest.raises(HistoricalRunBlocked, match="unverified session prices"):
+        SessionPrices(opens={"AAA": 10.0}, closes={"AAA": 10.0}, source_ref="unverified fixture", verified=False)
+
+
+def test_historical_runner_rejects_debentures_until_non_equity_allocation_policy_exists():
+    from portfolio.accounting import DebentureEntitlement
+
+    event = DebentureEntitlement(
+        event_id="DEB-1",
+        date=RDATE.isoformat(),
+        parent_symbol="AAA",
+        debenture_symbol="AAA-DEB",
+        numerator=1,
+        denominator=1,
+        face_value=29.0,
+        coupon_rate=0.055,
+        source_ref="issuer debenture terms",
+    )
+    with pytest.raises(HistoricalRunBlocked, match="non-rebalance asset allocation"):
+        HistoricalEvent("DEB-1", "issuer debenture terms", event, True)
+
+
 def test_historical_runner_fails_closed_on_unverified_event():
     event = DividendEntitlement(
         event_id="DIV-UNVERIFIED",
@@ -209,7 +246,7 @@ def test_historical_runner_rejects_missing_dividend_payment_before_end():
 
 
 def test_historical_runner_requires_next_actual_trading_day_execution():
-    bad = RebalanceInstruction(D1, D2, RANKED)
+    bad = _instruction(D1, D2)
     with pytest.raises(HistoricalRunBlocked, match="next actual trading session"):
         run_historical_simulation(
             trading_dates=(D1, E1, RDATE, RIGHTS_DATE, D2, E2),
