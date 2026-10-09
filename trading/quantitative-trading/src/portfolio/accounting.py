@@ -79,6 +79,92 @@ class Dividend:
 
 
 @dataclass(frozen=True)
+class DebentureEntitlement:
+    """Recognize a separately tracked debt instrument from eligible parent shares.
+
+    The valuation convention is explicit: FACE_VALUE_PROVISIONAL_V1. The
+    portfolio valuation input must mark the unlisted instrument at face value
+    until its first raw market price is available; do not backfill listing price.
+    """
+    event_id: str
+    date: str
+    parent_symbol: str
+    debenture_symbol: str
+    numerator: int
+    denominator: int
+    face_value: float
+    coupon_rate: float
+    source_ref: str
+    valuation_policy: str = "FACE_VALUE_PROVISIONAL_V1"
+
+    def __post_init__(self) -> None:
+        _validate_event_identity(self.event_id, self.date, self.source_ref)
+        if not self.parent_symbol or not self.debenture_symbol or self.parent_symbol == self.debenture_symbol:
+            raise ValueError("parent and debenture symbols must be non-empty and distinct")
+        if (isinstance(self.numerator, bool) or isinstance(self.denominator, bool)
+                or self.numerator <= 0 or self.denominator <= 0
+                or int(self.numerator) != self.numerator or int(self.denominator) != self.denominator):
+            raise ValueError("debenture entitlement ratio must use positive whole numbers")
+        if not isfinite(float(self.face_value)) or self.face_value <= 0:
+            raise ValueError("face_value must be finite and positive")
+        if not isfinite(float(self.coupon_rate)) or self.coupon_rate < 0:
+            raise ValueError("coupon_rate must be finite and non-negative")
+        if self.valuation_policy != "FACE_VALUE_PROVISIONAL_V1":
+            raise ValueError("unsupported debenture valuation policy")
+
+
+@dataclass(frozen=True)
+class DebentureCoupon:
+    """Credit one explicitly sourced coupon; never infer payment from a price."""
+    event_id: str
+    date: str
+    debenture_symbol: str
+    per_debenture_amount: float
+    source_ref: str
+
+    def __post_init__(self) -> None:
+        _validate_event_identity(self.event_id, self.date, self.source_ref)
+        if not self.debenture_symbol:
+            raise ValueError("debenture_symbol cannot be empty")
+        if not isfinite(float(self.per_debenture_amount)) or self.per_debenture_amount < 0:
+            raise ValueError("coupon amount must be finite and non-negative")
+
+
+@dataclass(frozen=True)
+class DebentureRedemption:
+    """Redeem all outstanding units once and credit principal plus final coupon."""
+    event_id: str
+    date: str
+    debenture_symbol: str
+    principal_per_debenture: float
+    final_coupon_per_debenture: float
+    source_ref: str
+
+    def __post_init__(self) -> None:
+        _validate_event_identity(self.event_id, self.date, self.source_ref)
+        if not self.debenture_symbol:
+            raise ValueError("debenture_symbol cannot be empty")
+        for name, amount in (("principal", self.principal_per_debenture),
+                             ("final coupon", self.final_coupon_per_debenture)):
+            if not isfinite(float(amount)) or amount < 0:
+                raise ValueError(f"{name} amount must be finite and non-negative")
+        if self.principal_per_debenture <= 0:
+            raise ValueError("principal_per_debenture must be positive")
+
+
+def _validate_event_identity(event_id: str, event_date: str, source_ref: str) -> None:
+    if not event_id or not event_id.strip():
+        raise ValueError("event_id is required for duplicate-cashflow protection")
+    if not source_ref or not source_ref.strip():
+        raise ValueError("source_ref is required for auditability")
+    try:
+        from datetime import date as _date
+        _date.fromisoformat(event_date)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("event date must be ISO YYYY-MM-DD") from exc
+
+
+@dataclass(frozen=True)
 class SecurityConversion:
     """Convert one security into another using an integer share ratio.
 
@@ -116,7 +202,38 @@ class ShareRatioAction:
             raise ValueError("share ratio terms must be positive whole numbers")
 
 
-LedgerEvent = Union[Trade, Dividend, ShareRatioAction, SecurityConversion, RightsEntitlement]
+def debenture_mark_price(
+    *,
+    valuation_date: str,
+    first_tradable_date: str,
+    face_value: float,
+    raw_market_price: float | None,
+) -> float:
+    """Apply FACE_VALUE_PROVISIONAL_V1 without look-ahead or stale post-listing marks.
+
+    Before first tradable date, use face value and ignore any future market quote.
+    On/after first tradable date, require the raw market price for that date;
+    missing marks fail closed rather than carrying a stale price.
+    """
+    from datetime import date as _date
+
+    try:
+        valuation_day = _date.fromisoformat(valuation_date)
+        first_tradable_day = _date.fromisoformat(first_tradable_date)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("valuation dates must be ISO YYYY-MM-DD") from exc
+    if not isfinite(float(face_value)) or face_value <= 0:
+        raise ValueError("face_value must be finite and positive")
+    if valuation_day < first_tradable_day:
+        return float(face_value)
+    if raw_market_price is None:
+        raise ValueError("MISSING_RAW_DEBENTURE_MARK: raw market price required on/after listing")
+    if not isfinite(float(raw_market_price)) or raw_market_price <= 0:
+        raise ValueError("raw_market_price must be finite and positive")
+    return float(raw_market_price)
+
+
+LedgerEvent = Union[Trade, Dividend, ShareRatioAction, SecurityConversion, RightsEntitlement, DebentureEntitlement, DebentureCoupon, DebentureRedemption]
 
 
 @dataclass
@@ -125,6 +242,7 @@ class PortfolioState:
     positions: Dict[str, int] = field(default_factory=dict)
     cumulative_costs: CostBreakdown = field(default_factory=CostBreakdown)
     cumulative_dividends: float = 0.0
+    applied_event_ids: set[str] = field(default_factory=set)
 
     def __post_init__(self) -> None:
         if not isfinite(float(self.cash)):
@@ -150,6 +268,39 @@ class PortfolioState:
             else:
                 self.positions.pop(trade.symbol, None)
         self.cumulative_costs = add_costs(self.cumulative_costs, trade.costs)
+
+    def apply_debenture_entitlement(self, event: DebentureEntitlement) -> int:
+        if event.event_id in self.applied_event_ids:
+            raise ValueError(f"duplicate ledger event_id: {event.event_id}")
+        parent_shares = self.shares(event.parent_symbol)
+        quantity = (parent_shares * event.numerator) // event.denominator
+        if quantity:
+            self.positions[event.debenture_symbol] = self.shares(event.debenture_symbol) + quantity
+        self.applied_event_ids.add(event.event_id)
+        return quantity
+
+    def apply_debenture_coupon(self, event: DebentureCoupon) -> float:
+        if event.event_id in self.applied_event_ids:
+            raise ValueError(f"duplicate ledger event_id: {event.event_id}")
+        quantity = self.shares(event.debenture_symbol)
+        if quantity <= 0:
+            raise ValueError(f"coupon event has no outstanding debentures: {event.debenture_symbol}")
+        credit = quantity * event.per_debenture_amount
+        self.cash += credit
+        self.applied_event_ids.add(event.event_id)
+        return credit
+
+    def apply_debenture_redemption(self, event: DebentureRedemption) -> float:
+        if event.event_id in self.applied_event_ids:
+            raise ValueError(f"duplicate ledger event_id: {event.event_id}")
+        quantity = self.shares(event.debenture_symbol)
+        if quantity <= 0:
+            raise ValueError(f"redemption event has no outstanding debentures: {event.debenture_symbol}")
+        credit = quantity * (event.principal_per_debenture + event.final_coupon_per_debenture)
+        self.cash += credit
+        self.positions.pop(event.debenture_symbol, None)
+        self.applied_event_ids.add(event.event_id)
+        return credit
 
     def apply_rights_entitlement(self, event: RightsEntitlement) -> int:
         parent_shares = self.shares(event.parent_symbol)
@@ -217,13 +368,23 @@ def apply_ledger(initial_cash: float, events: Sequence[LedgerEvent], initial_pos
     authoritative source records before using this function.
     """
     state = PortfolioState(cash=initial_cash, positions=dict(initial_positions or {}))
-    priority = {SecurityConversion: 0, ShareRatioAction: 0, RightsEntitlement: 0, Dividend: 1, Trade: 2}
+    priority = {
+        SecurityConversion: 0, ShareRatioAction: 0, RightsEntitlement: 0,
+        DebentureEntitlement: 1, DebentureCoupon: 1, DebentureRedemption: 1,
+        Dividend: 1, Trade: 2,
+    }
     ordered = sorted(enumerate(events), key=lambda x: (x[1].date, priority[type(x[1])], x[0]))
     for _, event in ordered:
         if isinstance(event, Trade):
             state.apply_trade(event)
         elif isinstance(event, RightsEntitlement):
             state.apply_rights_entitlement(event)
+        elif isinstance(event, DebentureEntitlement):
+            state.apply_debenture_entitlement(event)
+        elif isinstance(event, DebentureCoupon):
+            state.apply_debenture_coupon(event)
+        elif isinstance(event, DebentureRedemption):
+            state.apply_debenture_redemption(event)
         elif isinstance(event, Dividend):
             state.apply_dividend(event)
         elif isinstance(event, SecurityConversion):

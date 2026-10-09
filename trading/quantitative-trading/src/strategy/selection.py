@@ -8,7 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from math import isfinite
-from typing import Iterable, Mapping, Protocol, Sequence
+from typing import Callable, Iterable, Mapping, Protocol, Sequence
 
 from strategy.momentum import (
     Member,
@@ -53,10 +53,14 @@ def build_quarterly_selection_audit(
     skip_months: int = 1,
     holdings: int = 5,
     decision_dates: Sequence[date] | None = None,
+    signal_price_adjuster: Callable[[date, Mapping[str, object], Mapping[str, object]], tuple[Mapping[str, object], Mapping[str, object]]] | None = None,
 ) -> list[QuarterlySelection]:
     """Build deterministic signal/ranking rows without computing performance.
 
-    Signal inputs are month-end raw close prices. Ranking is descending
+    Signal inputs are month-end close prices. By default they are raw; an
+    optional signal_price_adjuster can transform only the signal maps before
+    ranking. Execution prices are fetched separately from the raw store and
+    are never passed through that adjustment hook. Ranking is descending
     momentum with symbol-ascending tie breaks. The selected Top-N is fixed
     before execution-open availability is checked: a missing selected open
     blocks that rebalance rather than silently replacing the name.
@@ -104,6 +108,12 @@ def build_quarterly_selection_audit(
         )
         start_prices = price_store.prices(formation_start)
         end_prices = price_store.prices(formation_end)
+        if signal_price_adjuster is not None:
+            # Adjust only the signal inputs. Execution prices are fetched independently
+            # from the raw price store and remain RAW_UNADJUSTED.
+            start_prices, end_prices = signal_price_adjuster(
+                formation_end, start_prices, end_prices
+            )
         execution_prices = price_store.prices(execution_date)
 
         # Ask for all scoreable names so the audit retains the full eligible
