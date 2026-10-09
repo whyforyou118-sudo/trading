@@ -158,10 +158,10 @@ def test_historical_runner_fails_closed_on_unverified_event():
         symbol="AAA",
         per_share=1.0,
         payment_date="2024-06-15",
-        source_ref="",
+        source_ref="issuer declaration",
     )
-    with pytest.raises(ValueError):
-        HistoricalEvent("DIV-UNVERIFIED", "", event, False)
+    with pytest.raises(HistoricalRunBlocked, match="unverified historical event"):
+        HistoricalEvent("DIV-UNVERIFIED", "issuer declaration", event, False)
 
 
 def test_historical_runner_fails_closed_if_rights_open_does_not_match_verified_source():
