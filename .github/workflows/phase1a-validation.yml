@@ -29,6 +29,10 @@ jobs:
         run: |
           cd trading/quantitative-trading
           python -m pytest -q tests/test_phase1a_accounting.py
+      - name: Test historical orchestration and P6 fail-closed gate
+        run: |
+          cd trading/quantitative-trading
+          python -m pytest -q tests/test_phase1b_historical.py tests/test_phase1a_preflight_manifest.py tests/test_phase1b_simulation.py tests/test_phase1b_engine_integration.py tests/test_phase1b_corporate_action_integration.py
       - name: Test Gate 2
         run: |
           cd trading/quantitative-trading
